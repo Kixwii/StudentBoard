@@ -8,17 +8,17 @@ const ParentDashboard = () => {
   // Sample data
   const children = [
     {
-      name: "Richard Kingangi",
+      name: "Gladys King'ang'i",
       grade: "Grade 8",
       class: "8A",
-      photo: "👧",
+      photo: "👧🏿",
       studentId: "STU2024001"
     },
     {
       name: "Onesmus Oliech", 
       grade: "Grade 5",
       class: "5B",
-      photo: "👦",
+      photo: "👦🏿",
       studentId: "STU2024002"
     }
   ];
