@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { User, BookOpen, DollarSign, FileText, ArrowRight, Calendar, Download, Bell } from 'lucide-react';
+import { User, BookOpen, DollarSign, FileText, ArrowRight, Calendar, Download, Bell, LogOut } from 'lucide-react';
 
-const ParentDashboard = () => {
+const ParentDashboard = ({ user, onLogout }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedChild, setSelectedChild] = useState(0);
 
@@ -72,20 +72,20 @@ const ParentDashboard = () => {
   const TabButton = ({ id, label, icon: Icon, isActive, onClick }) => (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+      className={`flex items-center gap-2 px-4 py-4 sm:px-5 sm:py-5 rounded-lg transition-all flex-1 sm:flex-none justify-center sm:justify-start text-sm sm:text-base ${
         isActive 
           ? 'bg-blue-100 text-blue-700 border-2 border-blue-200' 
           : 'bg-white text-gray-600 border-2 border-gray-200 hover:bg-gray-50'
       }`}
     >
-      <Icon size={18} />
-      {label}
+      <Icon size={16} className="sm:w-[18px] sm:h-[18px]" />
+      <span className="hidden xs:inline sm:inline">{label}</span>
     </button>
   );
 
   const OverviewTab = () => (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-green-50 p-4 rounded-lg border border-green-200">
           <div className="flex items-center gap-2 mb-2">
             <BookOpen className="text-green-600" size={20} />
@@ -138,7 +138,7 @@ const ParentDashboard = () => {
 
   const AcademicTab = () => (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <h3 className="font-semibold mb-2 text-gray-800">Current Semester</h3>
           <div className="text-3xl font-bold text-blue-600">{academicData.currentGPA}</div>
@@ -273,34 +273,49 @@ const ParentDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
+    <div className="min-h-screen bg-gray-100 p-2 sm:p-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-800">School Parent Portal</h1>
-            <div className="flex items-center gap-2 text-gray-600">
-              <User size={20} />
-              <span>Welcome, Parent</span>
+        <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200 mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-800">School Parent Portal</h1>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-gray-600">
+                <User size={20} />
+                <span className="text-sm sm:text-base">
+                  Welcome, {user?.userType === 'parent' ? 'Parent' : 'Student'}
+                  {user?.username && ` (${user.username})`}
+                </span>
+              </div>
+              {onLogout && (
+                <button
+                  onClick={onLogout}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Logout"
+                >
+                  <LogOut size={16} />
+                  <span className="hidden sm:inline">Logout</span>
+                </button>
+              )}
             </div>
           </div>
 
           {/* Child selector */}
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-4">
             {children.map((child, index) => (
               <button
                 key={index}
                 onClick={() => setSelectedChild(index)}
-                className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
+                className={`flex items-center gap-3 px-4 py-4 sm:px-5 sm:py-5 rounded-lg border-2 transition-all min-w-0 flex-1 sm:flex-none justify-center sm:justify-start ${
                   selectedChild === index 
                     ? 'border-blue-500 bg-blue-50' 
                     : 'border-gray-200 bg-white hover:bg-gray-50'
                 }`}
               >
-                <span className="text-2xl">{child.photo}</span>
-                <div className="text-left">
-                  <div className="font-semibold text-gray-800">{child.name}</div>
-                  <div className="text-sm text-gray-600">{child.grade} - {child.class}</div>
+                <span className="text-2xl flex-shrink-0">{child.photo}</span>
+                <div className="text-left min-w-0">
+                  <div className="font-semibold text-gray-800 truncate">{child.name}</div>
+                  <div className="text-sm text-gray-600 truncate">{child.grade} - {child.class}</div>
                 </div>
               </button>
             ))}
@@ -308,7 +323,7 @@ const ParentDashboard = () => {
         </div>
 
         {/* Navigation tabs */}
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="flex flex-wrap gap-2 mb-4 sm:mb-6 sm:gap-3">
           <TabButton 
             id="overview" 
             label="Overview" 
