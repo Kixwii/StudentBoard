@@ -23,6 +23,13 @@ end
 config :school_portal_api, SchoolPortalApiWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
+# Configure Guardian secret key from environment variable
+# For development, generate a key with: mix guardian.gen.secret
+guardian_secret_key = System.get_env("GUARDIAN_SECRET_KEY") || "dev_secret_key_change_in_production_#{:crypto.strong_rand_bytes(32) |> Base.encode64()}"
+
+config :school_portal_api, SchoolPortalApi.Guardian,
+  secret_key: guardian_secret_key
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||

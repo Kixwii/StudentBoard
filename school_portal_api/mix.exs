@@ -51,8 +51,11 @@ defmodule SchoolPortalApi.MixProject do
       {:gettext, "~> 1.0"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
-      {:bandit, "~> 1.5"}
-      {:cors_plug, "~> 3.0"}
+      {:bandit, "~> 1.5"},
+      {:cors_plug, "~> 3.0"},
+      {:guardian, "~> 2.3"},            # JWT authentication
+      {:bcrypt_elixir, "~> 3.0"},      # Password hashing
+      {:comeonin, "~> 5.3"}     
     ]
   end
 

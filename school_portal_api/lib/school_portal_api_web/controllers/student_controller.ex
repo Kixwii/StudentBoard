@@ -15,16 +15,12 @@ defmodule SchoolPortalApiWeb.StudentController do
   def submit_assignment(conn, %{"id" => student_id, "assignment_id" => assignment_id} = params) do
     file = params["file"]
     
-    case Student.submit_assignment(student_id, assignment_id, file) do
-      {:ok, submission} ->
-        conn
-        |> put_status(:created)
-        |> json(%{data: submission})
-      
-      {:error, reason} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> json(%{error: reason})
-    end
+    # Since submit_assignment always returns {:ok, submission} for now,
+    # we can simplify this:
+    {:ok, submission} = Student.submit_assignment(student_id, assignment_id, file)
+    
+    conn
+    |> put_status(:created)
+    |> json(%{data: submission})
   end
 end

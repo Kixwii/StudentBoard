@@ -36,7 +36,8 @@ const Login = ({ onLogin }) => {
     setTimeout(() => {
       setIsLoading(false);
       if (onLogin) {
-        onLogin(credentials.username, userType);
+        // Pass guardianId (using username as guardianId for now)
+        onLogin(credentials.username, userType, credentials.username);
       }
     }, 1500);
   };

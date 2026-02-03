@@ -7,8 +7,13 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [user, setUser] = useState(null)
 
-  const handleLogin = (username, userType) => {
-    setUser({ username, userType })
+  const handleLogin = (username, userType, guardianId) => {
+    setUser({ 
+      username, 
+      userType, 
+      guardianId,
+      firstName: username.split('@')[0] || username // Extract name from email or use username
+    })
     setIsLoggedIn(true)
   }
 
