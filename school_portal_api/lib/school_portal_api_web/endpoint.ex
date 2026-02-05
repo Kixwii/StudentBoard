@@ -45,7 +45,6 @@ defmodule SchoolPortalApiWeb.Endpoint do
   plug Plug.Session, @session_options
   
   # ADD CORS SUPPORT - Add this right before the router
-  plug SchoolPortalApiWeb.Plugs.CORS
   
   plug SchoolPortalApiWeb.Router
 end

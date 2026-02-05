@@ -41,7 +41,8 @@ config :phoenix, :json_library, Jason
 
 # Configure Guardian for JWT authentication
 config :school_portal_api, SchoolPortalApi.Guardian,
-  issuer: "school_portal_api"
+  issuer: "school_portal_api",
+  secret_key: "Kz1XbrV6k2O3Zx6uMUaTahSAjJqoeH7ofh2fkrQbWE/4ApeCh3kmOJjqTlp541iW"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

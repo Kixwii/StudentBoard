@@ -2,33 +2,36 @@ defmodule SchoolPortalApi.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+
   schema "users" do
     field :email, :string
-    field :password, :string, virtual: true
     field :password_hash, :string
-    field :role, :string, default: "parent"
-    field :full_name, :string
-    field :guardian_id, :string
+    field :password, :string, virtual: true
+    field :first_name, :string
+    field :last_name, :string
+    field :role, :string
+    field :last_login, :utc_datetime
 
-    timestamps()
+    has_one :guardian, SchoolPortalApi.Accounts.Guardian
+
+    timestamps(type: :utc_datetime)
   end
 
   @doc false
   def changeset(user, attrs) do
     user
-    |> cast(attrs, [:email, :password, :role, :full_name, :guardian_id])
-    |> validate_required([:email, :password])
-    |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must be a valid email")
+    |> cast(attrs, [:email, :password, :first_name, :last_name, :role])
+    |> validate_required([:email, :password, :role])
+    |> validate_format(:email, ~r/@/)
     |> validate_length(:password, min: 6)
     |> unique_constraint(:email)
     |> put_password_hash()
   end
 
-  @doc false
-  def registration_changeset(user, attrs) do
-    user
-    |> changeset(attrs)
-    |> validate_required([:role])
+  def login_changeset(user) do
+    change(user, last_login: DateTime.utc_now())
   end
 
   defp put_password_hash(%Ecto.Changeset{valid?: true, changes: %{password: password}} = changeset) do
@@ -36,11 +39,4 @@ defmodule SchoolPortalApi.Accounts.User do
   end
 
   defp put_password_hash(changeset), do: changeset
-
-  @doc """
-  Verifies a password against the stored hash.
-  """
-  def verify_password(user, password) do
-    Bcrypt.verify_pass(password, user.password_hash)
-  end
 end
