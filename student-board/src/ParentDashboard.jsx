@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, BookOpen, DollarSign, FileText, Calendar, Download, Bell, LogOut, AlertCircle, Loader2 } from 'lucide-react';
-
+import './ParentDashboard.css';
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 

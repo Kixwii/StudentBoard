@@ -3,7 +3,7 @@ defmodule SchoolPortalApiWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
-    plug CORSPlug, origin: ["http://localhost:5173", "http://localhost:3000"]
+    plug :put_cors_headers
   end
 
   pipeline :auth do
@@ -16,10 +16,13 @@ defmodule SchoolPortalApiWeb.Router do
     plug Guardian.Plug.LoadResource
   end
 
+  # Handle all OPTIONS requests for CORS preflight
+  options "/*path", SchoolPortalApiWeb.CORSController, :preflight
+
   scope "/api", SchoolPortalApiWeb do
     pipe_through :api
 
-    # Public routes - TEMPORARILY ALL PUBLIC
+    # Public routes
     post "/auth/register", AuthController, :register
     post "/auth/login", AuthController, :login
     get "/health", HealthController, :index
@@ -36,9 +39,11 @@ defmodule SchoolPortalApiWeb.Router do
     get "/fees/accounts/:account_id/transactions", FeeController, :transactions
   end
 
-  # Protected routes (empty for now)
-  # scope "/api", SchoolPortalApiWeb do
-  #   pipe_through [:api, :auth]
-  #   # Will add protected routes here later
-  # end
+  # Helper function to add CORS headers
+  defp put_cors_headers(conn, _opts) do
+    conn
+    |> Plug.Conn.put_resp_header("access-control-allow-origin", "*")
+    |> Plug.Conn.put_resp_header("access-control-allow-methods", "GET, POST, PUT, DELETE, OPTIONS")
+    |> Plug.Conn.put_resp_header("access-control-allow-headers", "content-type, authorization")
+  end
 end
