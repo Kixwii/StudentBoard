@@ -45,4 +45,18 @@ defmodule SchoolPortalApiWeb.GuardianController do
     
     json(conn, %{data: performance})
   end
+
+  def make_payment(conn, %{"id" => guardian_id} = params) do
+    # Mock payment processing
+    payment = %{
+      transactionId: "TXN#{System.unique_integer([:positive])}",
+      guardianId: guardian_id,
+      amount: params["amount"],
+      description: params["description"],
+      status: "completed",
+      timestamp: DateTime.utc_now() |> DateTime.to_iso8601()
+    }
+
+    json(conn, %{data: payment})
+  end
 end
