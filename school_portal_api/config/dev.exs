@@ -2,10 +2,10 @@ import Config
 
 # Configure your database
 config :school_portal_api, SchoolPortalApi.Repo,
-  username: System.get_env("USER"),
-  password: "",
+  username: "postgres",
+  password: "postgres",
   hostname: "localhost",
-  database: "school_portal_api_dev",
+  database: "school_portal_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
