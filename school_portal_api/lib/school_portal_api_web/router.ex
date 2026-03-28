@@ -34,6 +34,7 @@ defmodule SchoolPortalApiWeb.Router do
     
     get "/guardians/:id/students", GuardianController, :students
     get "/guardians/:id/students/:student_id/performance", GuardianController, :student_performance
+    post "/guardians/:id/payments", GuardianController, :make_payment
     
     get "/fees/accounts/:account_id", FeeController, :show
     get "/fees/accounts/:account_id/transactions", FeeController, :transactions
