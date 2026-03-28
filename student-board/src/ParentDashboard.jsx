@@ -192,10 +192,10 @@ const ParentDashboard = ({ user, onLogout }) => {
   const DashboardView = () => (
     <div className="space-y-6">
       {/* Welcome Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500 p-8 text-white">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-500 to-green-500 p-8 text-white">
         <div className="relative z-10">
           <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.firstName}! 👋</h1>
-          <p className="text-purple-100">Here's what's happening with {children[selectedChild]?.name}'s education</p>
+          <p className="text-blue-100">Here's what's happening with {children[selectedChild]?.name}'s education</p>
         </div>
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32"></div>
         <div className="absolute bottom-0 right-0 w-48 h-48 bg-white/10 rounded-full -mr-24 -mb-24"></div>
@@ -250,8 +250,8 @@ const ParentDashboard = ({ user, onLogout }) => {
 
         <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-purple-50 rounded-lg">
-              <FileText className="text-purple-600" size={24} />
+            <div className="p-3 bg-blue-50 rounded-lg">
+              <FileText className="text-blue-600" size={24} />
             </div>
           </div>
           <h3 className="text-gray-500 text-sm font-medium mb-1">Documents</h3>
@@ -269,7 +269,7 @@ const ParentDashboard = ({ user, onLogout }) => {
         <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold text-gray-900">Subject Performance</h2>
-            <button className="text-sm text-purple-600 hover:text-purple-700 font-medium">View All</button>
+            <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">View All</button>
           </div>
           <div className="space-y-4">
             {academicData?.subjects?.slice(0, 4).map((subject, index) => (
@@ -281,7 +281,7 @@ const ParentDashboard = ({ user, onLogout }) => {
                   </div>
                   <div className="w-full bg-gray-100 rounded-full h-2">
                     <div 
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all"
+                      className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all"
                       style={{ width: `${subject.percentage}%` }}
                     ></div>
                   </div>
@@ -295,13 +295,13 @@ const ParentDashboard = ({ user, onLogout }) => {
         <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold text-gray-900">Recent Assignments</h2>
-            <button className="text-sm text-purple-600 hover:text-purple-700 font-medium">View All</button>
+            <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">View All</button>
           </div>
           <div className="space-y-4">
             {academicData?.recentAssignments?.map((assignment, index) => (
               <div key={index} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <BookOpen className="text-purple-600" size={20} />
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <BookOpen className="text-blue-600" size={20} />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-medium text-gray-900 mb-1">{assignment.assignment}</h3>
@@ -328,12 +328,12 @@ const ParentDashboard = ({ user, onLogout }) => {
             <div key={index} className="p-6 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-100">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-gray-900">{subject.name}</h3>
-                <span className="text-2xl font-bold text-purple-600">{subject.grade}</span>
+                <span className="text-2xl font-bold text-blue-600">{subject.grade}</span>
               </div>
               <p className="text-sm text-gray-600 mb-4">Teacher: {subject.teacher}</p>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full"
+                  className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full"
                   style={{ width: `${subject.percentage}%` }}
                 ></div>
               </div>
@@ -393,11 +393,11 @@ const ParentDashboard = ({ user, onLogout }) => {
       <h2 className="text-xl font-bold text-gray-900 mb-6">Available Documents</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {documents?.map((doc, index) => (
-          <div key={index} className="p-6 border-2 border-gray-100 rounded-xl hover:border-purple-500 transition-colors cursor-pointer">
-            <FileText className="text-purple-600 mb-4" size={32} />
+          <div key={index} className="p-6 border-2 border-gray-100 rounded-xl hover:border-blue-500 transition-colors cursor-pointer">
+            <FileText className="text-blue-600 mb-4" size={32} />
             <h3 className="font-bold text-gray-900 mb-2">{doc.name}</h3>
             <p className="text-sm text-gray-600 mb-4">Updated: {doc.updated}</p>
-            <button className="w-full bg-purple-50 text-purple-600 py-2 rounded-lg font-medium hover:bg-purple-100 transition-colors flex items-center justify-center gap-2">
+            <button className="w-full bg-blue-50 text-blue-600 py-2 rounded-lg font-medium hover:bg-blue-100 transition-colors flex items-center justify-center gap-2">
               <Download size={16} />
               Download
             </button>
@@ -421,7 +421,7 @@ const ParentDashboard = ({ user, onLogout }) => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="animate-spin h-12 w-12 text-purple-600 mx-auto mb-4" />
+          <Loader2 className="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4" />
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
@@ -457,7 +457,7 @@ return (
             onClick={() => setSelectedChild(index)}
             className={`w-full p-3 rounded-lg mb-2 transition-all ${
               selectedChild === index
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                ? 'bg-gradient-to-r from-blue-600 to-green-600 text-white'
                 : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
             }`}
           >
@@ -486,7 +486,7 @@ return (
             onClick={() => setActiveTab(item.id)}
             className={`w-full flex items-center gap-3 p-3 rounded-lg mb-2 transition-all ${
               activeTab === item.id
-                ? 'bg-purple-50 text-purple-600 font-medium'
+                ? 'bg-blue-50 text-blue-600 font-medium'
                 : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
