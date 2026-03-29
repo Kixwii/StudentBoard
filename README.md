@@ -187,7 +187,7 @@ VITE_API_URL=http://localhost:4000/api
 4. Ensure all tests pass
 5. Submit PR with clear description
 
-## 📄 License
+## License
 
 MIT
 
