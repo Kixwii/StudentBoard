@@ -11,7 +11,7 @@ defmodule SchoolPortalApi.MixProject do
       aliases: aliases(),
       compilers: Mix.compilers(),
       deps: deps()
-     ]
+    ]
   end
 
   # Configuration for the OTP application.
@@ -38,26 +38,29 @@ defmodule SchoolPortalApi.MixProject do
   #
   # Type `mix help deps` for examples and options.
   defp deps do
-  [
-    {:phoenix, "~> 1.7.14"},
-    {:phoenix_ecto, "~> 4.5"},
-    {:ecto_sql, "~> 3.10"},
-    {:postgrex, ">= 0.0.0"},
-    {:phoenix_live_dashboard, "~> 0.8.3"},
-    {:swoosh, "~> 1.5"},
-    {:finch, "~> 0.13"},
-    {:telemetry_metrics, "~> 1.0"},
-    {:telemetry_poller, "~> 1.0"},
-    {:gettext, "~> 0.20"},
-    {:jason, "~> 1.2"},
-    {:dns_cluster, "~> 0.1.1"},
-    {:bandit, "~> 1.5"},
-    {:cors_plug, "~> 3.0"},
-    {:guardian, "~> 2.3"},
-    {:bcrypt_elixir, "~> 3.0"},
-    {:comeonin, "~> 5.3"}
-  ]
-end
+    [
+      {:phoenix, "~> 1.7.14"},
+      {:phoenix_ecto, "~> 4.5"},
+      {:ecto_sql, "~> 3.10"},
+      {:postgrex, ">= 0.0.0"},
+      {:phoenix_live_dashboard, "~> 0.8.3"},
+      {:swoosh, "~> 1.5"},
+      {:finch, "~> 0.13"},
+      {:telemetry_metrics, "~> 1.0"},
+      {:telemetry_poller, "~> 1.0"},
+      {:gettext, "~> 0.20"},
+      {:jason, "~> 1.2"},
+      {:dns_cluster, "~> 0.1.1"},
+      {:bandit, "~> 1.5"},
+      {:cors_plug, "~> 3.0"},
+      {:guardian, "~> 2.3"},
+      {:bcrypt_elixir, "~> 3.0"},
+      {:comeonin, "~> 5.3"},
+
+      # Override guardian's jose dependency with a specific version
+      {:jose, "~> 1.11.12", override: true}
+    ]
+  end
 
   # Aliases are shortcuts or tasks specific to the current project.
   # For example, to install project dependencies and perform other setup tasks, run:

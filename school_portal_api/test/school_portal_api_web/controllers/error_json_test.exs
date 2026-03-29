@@ -2,7 +2,9 @@ defmodule SchoolPortalApiWeb.ErrorJSONTest do
   use SchoolPortalApiWeb.ConnCase, async: true
 
   test "renders 404" do
-    assert SchoolPortalApiWeb.ErrorJSON.render("404.json", %{}) == %{errors: %{detail: "Not Found"}}
+    assert SchoolPortalApiWeb.ErrorJSON.render("404.json", %{}) == %{
+             errors: %{detail: "Not Found"}
+           }
   end
 
   test "renders 500" do
