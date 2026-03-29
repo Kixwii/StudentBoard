@@ -4,6 +4,38 @@ import './ParentDashboard.css';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const encodePathParam = (value) => encodeURIComponent(String(value ?? ''));
+
+const getDemoStudentPayload = () => ({
+  academicData: {
+    currentGPA: 3.7,
+    attendance: 94,
+    subjects: [
+      { name: 'Mathematics', grade: 'A-', percentage: 87, teacher: 'Ms. Rodriguez' },
+      { name: 'English Literature', grade: 'B+', percentage: 85, teacher: 'Mr. Thompson' },
+      { name: 'Science', grade: 'A', percentage: 92, teacher: 'Dr. Chen' },
+    ],
+    recentAssignments: [
+      { subject: 'Mathematics', assignment: 'Algebra Quiz 3', score: '18/20', date: '2024-08-15' },
+    ],
+  },
+  feeData: {
+    currentBalance: 1250.0,
+    dueDate: '2024-09-15',
+    breakdown: [
+      { category: 'Tuition Fee', amount: 800.0 },
+      { category: 'Activity Fee', amount: 150.0 },
+    ],
+    paymentHistory: [
+      { date: '2024-07-15', amount: 1200.0, description: 'Q1 Tuition Payment', method: 'Bank Transfer' },
+    ],
+  },
+  documents: [{ name: 'Academic Transcript', status: 'Available', updated: '2024-08-01' }],
+});
+
+const isNetworkFailure = (error) =>
+  error?.name === 'TypeError' ||
+  /networkerror|failed to fetch|load failed/i.test(error?.message || '');
 
 // API Service Layer
 const api = {
@@ -14,22 +46,17 @@ const api = {
       ...(token && { Authorization: `Bearer ${token}` }),
       ...options.headers,
     };
-    try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
-      if (response.status === 401) {
-        localStorage.removeItem('auth_token');
-        window.location.href = '/login';
-        throw new Error('Unauthorized');
-      }
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Request failed');
-      }
-      return await response.json();
-    } catch (error) {
-      console.error('API Error:', error);
-      throw error;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+    if (response.status === 401) {
+      localStorage.removeItem('auth_token');
+      window.location.href = '/login';
+      throw new Error('Unauthorized');
     }
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Request failed');
+    }
+    return await response.json();
   },
   get: (endpoint) => api.request(endpoint, { method: 'GET' }),
   post: (endpoint, data) => api.request(endpoint, { method: 'POST', body: JSON.stringify(data) }),
@@ -40,33 +67,35 @@ const api = {
 // Service modules
 const guardianService = {
   getStudents: async (guardianId) => {
-    const response = await api.get(`/guardians/${guardianId}/students`);
+    const response = await api.get(`/guardians/${encodePathParam(guardianId)}/students`);
     return response.data;
   },
   getStudentPerformance: async (guardianId, studentId) => {
-    const response = await api.get(`/guardians/${guardianId}/students/${studentId}/performance`);
+    const response = await api.get(
+      `/guardians/${encodePathParam(guardianId)}/students/${encodePathParam(studentId)}/performance`
+    );
     return response.data;
   },
   makePayment: async (guardianId, paymentData) => {
-    const response = await api.post(`/guardians/${guardianId}/payments`, paymentData);
+    const response = await api.post(`/guardians/${encodePathParam(guardianId)}/payments`, paymentData);
     return response.data;
   },
 };
 
 const feeService = {
   getAccount: async (studentId) => {
-    const response = await api.get(`/fees/accounts/${studentId}`);
+    const response = await api.get(`/fees/accounts/${encodePathParam(studentId)}`);
     return response.data;
   },
   getTransactions: async (studentId) => {
-    const response = await api.get(`/fees/accounts/${studentId}/transactions`);
+    const response = await api.get(`/fees/accounts/${encodePathParam(studentId)}/transactions`);
     return response.data;
   },
 };
 
 const documentService = {
   getDocuments: async (studentId) => {
-    const response = await api.get(`/students/${studentId}/documents`);
+    const response = await api.get(`/students/${encodePathParam(studentId)}/documents`);
     return response.data;
   },
 };
@@ -245,6 +274,7 @@ const ParentDashboard = ({ user, onLogout }) => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(null);
+  const [isBackendUnavailable, setIsBackendUnavailable] = useState(false);
 
   // Fetch children list on mount
   useEffect(() => {
@@ -255,8 +285,12 @@ const ParentDashboard = ({ user, onLogout }) => {
         setChildren(studentsData);
         setError(null);
       } catch (err) {
-        setError('Failed to load students');
-        console.error(err);
+        setError(
+          isNetworkFailure(err)
+            ? 'Backend unavailable. Using demo data'
+            : 'Failed to load students. Using demo data'
+        );
+        setIsBackendUnavailable(isNetworkFailure(err));
         setChildren([
           { name: "Gladys King'ang'i", grade: "Grade 8", class: "8A", photo: "👧🏿", studentId: "STU2024001" },
           { name: "Onesmus Oliech", grade: "Grade 5", class: "5B", photo: "👦🏿", studentId: "STU2024002" }
@@ -273,6 +307,15 @@ const ParentDashboard = ({ user, onLogout }) => {
   useEffect(() => {
     const fetchStudentData = async () => {
       if (!children[selectedChild]) return;
+
+      if (isBackendUnavailable) {
+        const demoPayload = getDemoStudentPayload();
+        setAcademicData(demoPayload.academicData);
+        setFeeData(demoPayload.feeData);
+        setDocuments(demoPayload.documents);
+        setNotifications([]);
+        return;
+      }
 
       try {
         setLoading(true);
@@ -298,39 +341,23 @@ const ParentDashboard = ({ user, onLogout }) => {
         ]);
         setError(null);
       } catch (err) {
-        console.error('Error fetching student data:', err);
-        setError('Failed to load student data');
-        setAcademicData({
-          currentGPA: 3.7,
-          attendance: 94,
-          subjects: [
-            { name: "Mathematics", grade: "A-", percentage: 87, teacher: "Ms. Rodriguez" },
-            { name: "English Literature", grade: "B+", percentage: 85, teacher: "Mr. Thompson" },
-            { name: "Science", grade: "A", percentage: 92, teacher: "Dr. Chen" },
-          ],
-          recentAssignments: [
-            { subject: "Mathematics", assignment: "Algebra Quiz 3", score: "18/20", date: "2024-08-15" },
-          ]
-        });
-        setFeeData({
-          currentBalance: 1250.00,
-          dueDate: "2024-09-15",
-          breakdown: [
-            { category: "Tuition Fee", amount: 800.00 },
-            { category: "Activity Fee", amount: 150.00 },
-          ],
-          paymentHistory: [
-            { date: "2024-07-15", amount: 1200.00, description: "Q1 Tuition Payment", method: "Bank Transfer" },
-          ]
-        });
-        setDocuments([{ name: "Academic Transcript", status: "Available", updated: "2024-08-01" }]);
+        setError(
+          isNetworkFailure(err)
+            ? 'Backend unavailable. Using demo data'
+            : 'Failed to load student data. Using demo data'
+        );
+        setIsBackendUnavailable(isNetworkFailure(err));
+        const demoPayload = getDemoStudentPayload();
+        setAcademicData(demoPayload.academicData);
+        setFeeData(demoPayload.feeData);
+        setDocuments(demoPayload.documents);
       } finally {
         setLoading(false);
       }
     };
 
     if (children.length > 0) fetchStudentData();
-  }, [selectedChild, children, user?.guardianId]);
+  }, [selectedChild, children, user?.guardianId, isBackendUnavailable]);
 
   const refreshFeeData = async () => {
     const studentId = children[selectedChild].studentId;
@@ -695,7 +722,7 @@ const ParentDashboard = ({ user, onLogout }) => {
                     : 'border-gray-200 bg-white hover:bg-gray-50'
                 }`}
               >
-                <span className="text-2xl flex-shrink-0">{child.photo}</span>
+                <span className="text-2xl shrink-0">{child.photo}</span>
                 <div className="text-left min-w-0">
                   <div className="font-semibold text-gray-800 truncate">{child.name}</div>
                   <div className="text-sm text-gray-600 truncate">{child.grade} - {child.class}</div>
