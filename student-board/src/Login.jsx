@@ -11,6 +11,7 @@ const Login = ({ onLogin }) => {
   const [userType] = useState('parent'); // parent-only app
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [rememberMe, setRememberMe] = useState(true);
   
   const [windowSize, setWindowSize] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -300,6 +301,8 @@ const Login = ({ onLogin }) => {
               <label className="flex items-center">
                 <input
                   type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                   style={{
                     width: isExtraSmall ? '0.875rem' : '1rem',
                     height: isExtraSmall ? '0.875rem' : '1rem',
