@@ -45,6 +45,16 @@ const Login = ({ onLogin }) => {
       const { token, user } = response.data.data;
       localStorage.setItem('auth_token', token);
 
+      if (rememberMe) {
+        const userData = {
+          username: user.email,
+          userType,
+          guardianId: user.guardian_id,
+          firstName: user.first_name
+        };
+        localStorage.setItem('user_data', JSON.stringify(userData));
+      }
+
       if (onLogin) {
         onLogin(user.email, userType, user.guardian_id, user.first_name);
       }
