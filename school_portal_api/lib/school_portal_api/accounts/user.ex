@@ -31,10 +31,12 @@ defmodule SchoolPortalApi.Accounts.User do
   end
 
   def login_changeset(user) do
-    change(user, last_login: DateTime.utc_now())
+    change(user, last_login: DateTime.utc_now() |> DateTime.truncate(:second))
   end
 
-  defp put_password_hash(%Ecto.Changeset{valid?: true, changes: %{password: password}} = changeset) do
+  defp put_password_hash(
+         %Ecto.Changeset{valid?: true, changes: %{password: password}} = changeset
+       ) do
     put_change(changeset, :password_hash, Bcrypt.hash_pwd_salt(password))
   end
 
