@@ -1,31 +1,63 @@
 defmodule SchoolPortalApiWeb.FeeController do
   use SchoolPortalApiWeb, :controller
 
-  def show(conn, %{"account_id" => _account_id}) do
-    # Mock fee account data
-    account = %{
-      currentBalance: 1250.00,
-      dueDate: "2024-09-15",
-      breakdown: [
-        %{category: "Tuition Fee", amount: 800.00},
-        %{category: "Activity Fee", amount: 150.00},
-        %{category: "Library Fee", amount: 50.00},
-        %{category: "Lab Fee", amount: 100.00},
-        %{category: "Transportation", amount: 150.00}
-      ]
-    }
-    
-    json(conn, %{data: account})
+  alias SchoolPortalApi.{Accounts, Students, Fees}
+
+  def show(conn, %{"account_id" => student_id}) do
+    with :ok <- authorize_student_access(conn, student_id) do
+      case Fees.get_account_by_student(student_id) do
+        nil ->
+          conn |> put_status(:not_found) |> json(%{error: "Fee account not found"})
+
+        account ->
+          breakdown =
+            Enum.map(account.breakdowns, fn b ->
+              %{category: b.category, amount: b.amount}
+            end)
+
+          json(conn, %{
+            data: %{
+              currentBalance: account.current_balance,
+              dueDate: Date.to_string(account.due_date),
+              breakdown: breakdown
+            }
+          })
+      end
+    else
+      {:error, :forbidden} ->
+        conn |> put_status(:forbidden) |> json(%{error: "Forbidden"})
+    end
   end
 
-  def transactions(conn, %{"account_id" => _account_id}) do
-    # Mock transaction history
-    transactions = [
-      %{date: "2024-07-15", amount: 1200.00, description: "Q1 Tuition Payment", method: "Bank Transfer"},
-      %{date: "2024-06-01", amount: 200.00, description: "Registration Fee", method: "Cash"},
-      %{date: "2024-04-20", amount: 1200.00, description: "Q4 Previous Year", method: "Check"}
-    ]
-    
-    json(conn, %{data: transactions})
+  def transactions(conn, %{"account_id" => student_id}) do
+    with :ok <- authorize_student_access(conn, student_id) do
+      txns = Fees.get_transactions_by_student(student_id)
+
+      formatted =
+        Enum.map(txns, fn t ->
+          %{
+            date: Date.to_string(DateTime.to_date(t.inserted_at)),
+            amount: t.amount,
+            description: t.description,
+            method: t.method
+          }
+        end)
+
+      json(conn, %{data: formatted})
+    else
+      {:error, :forbidden} ->
+        conn |> put_status(:forbidden) |> json(%{error: "Forbidden"})
+    end
+  end
+
+  defp authorize_student_access(conn, student_id) do
+    current_user = Guardian.Plug.current_resource(conn)
+    guardian = Accounts.get_guardian_by_user_id(current_user.id)
+
+    if guardian != nil and Students.guardian_owns_student?(guardian.id, student_id) do
+      :ok
+    else
+      {:error, :forbidden}
+    end
   end
 end
