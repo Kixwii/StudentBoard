@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import api from './services/api';
 import { User, Lock, Eye, EyeOff, GraduationCap } from 'lucide-react';
 
 const Login = ({ onLogin }) => {
@@ -9,6 +10,7 @@ const Login = ({ onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [userType] = useState('parent'); // parent-only app
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   
   const [windowSize, setWindowSize] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -31,15 +33,26 @@ const Login = ({ onLogin }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // Simulate login process
-    setTimeout(() => {
-      setIsLoading(false);
+    setError(null);
+
+    try {
+      const response = await api.post('/auth/login', {
+        email: credentials.username,
+        password: credentials.password,
+      });
+
+      const { token, user } = response.data.data;
+      localStorage.setItem('auth_token', token);
+
       if (onLogin) {
-        // Pass guardianId (using username as guardianId for now)
-        onLogin(credentials.username, userType, credentials.username);
+        onLogin(user.email, userType, user.guardian_id, user.first_name);
       }
-    }, 1500);
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Login failed. Please try again.';
+      setError(msg);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -187,6 +200,19 @@ const Login = ({ onLogin }) => {
         {/* Login Form */}
         <div style={dashboardCardStyle}>
           <div style={{display: 'flex', flexDirection: 'column', gap: isExtraSmall ? '0.75rem' : '1rem'}}>
+            {/* Error Message */}
+            {error && (
+              <div style={{
+                padding: '0.75rem',
+                backgroundColor: '#fee2e2',
+                border: '1px solid #fca5a5',
+                borderRadius: '0.5rem',
+                color: '#dc2626',
+                fontSize: isExtraSmall ? '0.8125rem' : '0.875rem'
+              }}>
+                {error}
+              </div>
+            )}
             {/* Username Field */}
             <div style={{marginBottom: isExtraSmall ? '0.75rem' : '1rem'}}>
               <label style={{
