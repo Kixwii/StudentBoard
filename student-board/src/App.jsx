@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 import Login from './Login'
 import ParentDashboard from './ParentDashboard'
@@ -18,6 +18,8 @@ function App() {
   }
 
   const handleLogout = () => {
+    localStorage.removeItem('auth_token')
+    localStorage.removeItem('user_data')
     setUser(null)
     setIsLoggedIn(false)
   }
