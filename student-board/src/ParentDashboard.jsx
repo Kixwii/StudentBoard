@@ -17,22 +17,17 @@ const api = {
       ...(token && { Authorization: `Bearer ${token}` }),
       ...options.headers,
     };
-    try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
-      if (response.status === 401) {
-        localStorage.removeItem('auth_token');
-        window.location.href = '/login';
-        throw new Error('Unauthorized');
-      }
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Request failed');
-      }
-      return await response.json();
-    } catch (error) {
-      console.error('API Error:', error);
-      throw error;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+    if (response.status === 401) {
+      localStorage.removeItem('auth_token');
+      window.location.href = '/login';
+      throw new Error('Unauthorized');
     }
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Request failed');
+    }
+    return await response.json();
   },
   get: (endpoint) => api.request(endpoint, { method: 'GET' }),
   post: (endpoint, data) => api.request(endpoint, { method: 'POST', body: JSON.stringify(data) }),
@@ -43,33 +38,35 @@ const api = {
 // Service modules
 const guardianService = {
   getStudents: async (guardianId) => {
-    const response = await api.get(`/guardians/${guardianId}/students`);
+    const response = await api.get(`/guardians/${encodePathParam(guardianId)}/students`);
     return response.data;
   },
   getStudentPerformance: async (guardianId, studentId) => {
-    const response = await api.get(`/guardians/${guardianId}/students/${studentId}/performance`);
+    const response = await api.get(
+      `/guardians/${encodePathParam(guardianId)}/students/${encodePathParam(studentId)}/performance`
+    );
     return response.data;
   },
   makePayment: async (guardianId, paymentData) => {
-    const response = await api.post(`/guardians/${guardianId}/payments`, paymentData);
+    const response = await api.post(`/guardians/${encodePathParam(guardianId)}/payments`, paymentData);
     return response.data;
   },
 };
 
 const feeService = {
   getAccount: async (studentId) => {
-    const response = await api.get(`/fees/accounts/${studentId}`);
+    const response = await api.get(`/fees/accounts/${encodePathParam(studentId)}`);
     return response.data;
   },
   getTransactions: async (studentId) => {
-    const response = await api.get(`/fees/accounts/${studentId}/transactions`);
+    const response = await api.get(`/fees/accounts/${encodePathParam(studentId)}/transactions`);
     return response.data;
   },
 };
 
 const documentService = {
   getDocuments: async (studentId) => {
-    const response = await api.get(`/students/${studentId}/documents`);
+    const response = await api.get(`/students/${encodePathParam(studentId)}/documents`);
     return response.data;
   },
 };
@@ -179,7 +176,7 @@ const ParentDashboard = ({ user, onLogout }) => {
       }
     };
     if (children.length > 0) fetchStudentData();
-  }, [selectedChild, children, user?.guardianId]);
+  }, [selectedChild, children, user?.guardianId, isBackendUnavailable]);
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },

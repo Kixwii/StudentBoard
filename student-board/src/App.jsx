@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 import Login from './Login'
 import ParentDashboard from './ParentDashboard'
@@ -7,17 +7,19 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [user, setUser] = useState(null)
 
-  const handleLogin = (username, userType, guardianId) => {
-    setUser({ 
-      username, 
-      userType, 
+  const handleLogin = (username, userType, guardianId, firstName) => {
+    setUser({
+      username,
+      userType,
       guardianId,
-      firstName: username.split('@')[0] || username // Extract name from email or use username
+      firstName: firstName || username.split('@')[0] || username
     })
     setIsLoggedIn(true)
   }
 
   const handleLogout = () => {
+    localStorage.removeItem('auth_token')
+    localStorage.removeItem('user_data')
     setUser(null)
     setIsLoggedIn(false)
   }

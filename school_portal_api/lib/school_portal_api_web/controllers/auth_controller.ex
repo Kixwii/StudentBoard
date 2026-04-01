@@ -45,14 +45,15 @@ defmodule SchoolPortalApiWeb.AuthController do
         {:ok, token, _claims} = Guardian.encode_and_sign(user)
 
         # Get guardian info if parent
-        guardian_id = if user.role == "parent" do
-          case Accounts.get_guardian_by_user_id(user.id) do
-            nil -> nil
-            guardian -> guardian.id
+        guardian_id =
+          if user.role == "parent" do
+            case Accounts.get_guardian_by_user_id(user.id) do
+              nil -> nil
+              guardian -> guardian.id
+            end
+          else
+            nil
           end
-        else
-          nil
-        end
 
         conn
         |> json(%{
