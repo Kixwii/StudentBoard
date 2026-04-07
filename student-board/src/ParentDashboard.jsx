@@ -176,7 +176,7 @@ const ParentDashboard = ({ user, onLogout }) => {
       }
     };
     if (children.length > 0) fetchStudentData();
-  }, [selectedChild, children, user?.guardianId, isBackendUnavailable]);
+  }, [selectedChild, children, user?.guardianId]);
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
