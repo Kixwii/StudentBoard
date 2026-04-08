@@ -5,7 +5,7 @@ config :school_portal_api, SchoolPortalApi.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
-  database: "school_portal_dev",
+  database: "school_portal_api_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
