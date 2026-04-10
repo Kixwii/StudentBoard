@@ -24,12 +24,6 @@ const ParentDashboard = ({ user, onLogout }) => {
 
   useEffect(() => {
     const fetchChildren = async () => {
-      const { getStudentsByGuardian } = await import('./services/mockDataService');
-      const mockStudents = getStudentsByGuardian(user?.guardianId || 'parent@test.com');
-
-      setChildren(mockStudents);
-      setLoading(false);
-
       if (!user?.guardianId) return;
 
       try {
@@ -38,15 +32,15 @@ const ParentDashboard = ({ user, onLogout }) => {
           setChildren(studentsData);
         }
         setError(null);
+        setLoading(false);
       } catch (err) {
-        console.log('API unavailable, continuing with mock data:', err);
+        console.error('API Error fetching children:', err);
+        setError("Could not load children data");
+        setLoading(false);
       }
     };
 
     fetchChildren();
-
-    const interval = setInterval(fetchChildren, 5000);
-    return () => clearInterval(interval);
   }, [user?.guardianId]);
 
   useEffect(() => {
@@ -54,14 +48,8 @@ const ParentDashboard = ({ user, onLogout }) => {
       if (!children[selectedChild]) return;
 
       const studentId = children[selectedChild].id || children[selectedChild].studentId;
-
-      const { getStudentAcademic, getStudentFees, getStudentDocs } = await import('./services/mockDataService');
-
-      setAcademicData(getStudentAcademic(studentId));
-      setFeeData(getStudentFees(studentId));
-      setDocuments(getStudentDocs(studentId));
-      setLoading(false);
-
+      
+      setLoading(true);
       try {
         const [performance, feeAccount, transactions, docs] = await Promise.all([
           guardianService.getStudentPerformance(user.guardianId, studentId),
@@ -75,15 +63,15 @@ const ParentDashboard = ({ user, onLogout }) => {
         if (docs) setDocuments(docs);
         setError(null);
       } catch (err) {
-        console.log('API unavailable, continuing with mock data:', err);
+        console.error('API Error fetching student detail:', err);
+        setError("Could not load full student details");
+      } finally {
+        setLoading(false);
       }
     };
 
     if (children.length > 0) {
       fetchStudentData();
-
-      const interval = setInterval(fetchStudentData, 3000);
-      return () => clearInterval(interval);
     }
   }, [children, selectedChild, user?.guardianId]);
 
@@ -92,7 +80,6 @@ const ParentDashboard = ({ user, onLogout }) => {
     { id: 'academic', label: 'Academic', icon: BookOpen },
     { id: 'fees', label: 'Payments', icon: DollarSign },
     { id: 'documents', label: 'Documents', icon: FileText },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   ];
 
   const getAttendanceRate = (att) => {

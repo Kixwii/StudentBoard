@@ -31,9 +31,6 @@ const TeacherDashboard = ({ user, onLogout }) => {
       setLoading(false);
     };
     fetchStudents();
-    
-    const interval = setInterval(fetchStudents, 5000);
-    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {

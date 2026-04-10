@@ -13,26 +13,37 @@ function App() {
     // Initialize shared mock database on app load
     initMockData()
     
-    // Check if user is already logged in (optional persistence, but ignoring for now since it wasn't fully set up)
+    // Check if user is already logged in securely via token and persisted state
+    const token = localStorage.getItem('auth_token');
+    const storedUser = localStorage.getItem('user_data');
+    
+    if (token && storedUser) {
+      setUser(JSON.parse(storedUser));
+      setIsLoggedIn(true);
+    }
   }, [])
 
   const handleLogin = (username, userType, guardianId, firstName) => {
-    setUser({
+    const userData = {
       username,
       userType,
       guardianId,
       firstName: firstName || username.split('@')[0] || username
-    })
-    setIsLoggedIn(true)
+    };
+    
+    setUser(userData);
+    setIsLoggedIn(true);
+    localStorage.setItem('user_data', JSON.stringify(userData));
   }
 
   const handleLogout = () => {
-    // localStorage.removeItem('auth_token') -> using mock for now
+    localStorage.removeItem('auth_token')
+    localStorage.removeItem('user_data')
     setUser(null)
     setIsLoggedIn(false)
   }
 
-  if (!isLoggedIn) {
+  if (!isLoggedIn || !user) {
     return <Login onLogin={handleLogin} />
   }
 

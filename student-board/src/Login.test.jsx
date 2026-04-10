@@ -1,9 +1,20 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Login from './Login';
+import api from './services/api';
+
+vi.mock('./services/api', () => ({
+  default: {
+    post: vi.fn()
+  }
+}));
 
 describe('Login Component', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
   it('renders login form elements properly', () => {
     render(<Login onLogin={vi.fn()} />);
     
@@ -27,6 +38,21 @@ describe('Login Component', () => {
 
   it('calls onLogin prop on submit', async () => {
     const handleLogin = vi.fn();
+    
+    api.post.mockResolvedValue({
+      data: {
+        data: {
+          token: 'mock-token',
+          user: {
+            email: 'test@parent.com',
+            role: 'parent',
+            guardian_id: 'g1',
+            first_name: 'Test'
+          }
+        }
+      }
+    });
+
     render(<Login onLogin={handleLogin} />);
     
     fireEvent.change(screen.getByPlaceholderText('Parent Email'), { target: { value: 'test@parent.com' } });
@@ -37,7 +63,7 @@ describe('Login Component', () => {
     expect(screen.getByText('Signing in...')).toBeInTheDocument();
     
     await waitFor(() => {
-      expect(handleLogin).toHaveBeenCalledWith('test@parent.com', 'parent', 'test@parent.com', 'test');
+      expect(handleLogin).toHaveBeenCalledWith('test@parent.com', 'parent', 'g1', 'Test');
     }, { timeout: 1500 });
   });
 });

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, GraduationCap, Users, User } from 'lucide-react';
+import { Eye, EyeOff, GraduationCap, Users, User, AlertCircle } from 'lucide-react';
+import api from './services/api';
 
 const Login = ({ onLogin }) => {
   const [credentials, setCredentials] = useState({
@@ -10,27 +11,48 @@ const Login = ({ onLogin }) => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
 
   const handleInputChange = (e) => {
+    setAuthError('');
     setCredentials(prev => ({
       ...prev,
       [e.target.name]: e.target.value
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     setIsLoading(true);
 
-    setTimeout(() => {
+    try {
+      const response = await api.post('/auth/login', {
+        email: credentials.username,
+        password: credentials.password
+      });
+
+      const { token, user } = response.data.data;
+      
+      // Verify the returned user role matches the UI selected role
+      if (user.role !== role) {
+        setAuthError(`This account does not have access to the ${role} portal.`);
+        setIsLoading(false);
+        return;
+      }
+
+      // Store real token
+      localStorage.setItem('auth_token', token);
+      
       setIsLoading(false);
 
       if (onLogin) {
-        onLogin(credentials.username, role, credentials.username, credentials.username.split('@')[0]);
-      } else {
-        console.error("onLogin missing");
+        onLogin(user.email, user.role, user.guardian_id, user.first_name);
       }
-    }, 1000);
+    } catch (err) {
+      console.error("Login failed:", err);
+      setAuthError(err.response?.data?.error || "Login failed. Please check your credentials.");
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -42,6 +64,13 @@ const Login = ({ onLogin }) => {
           <h1 className="text-2xl font-semibold text-gray-800">Welcome Back</h1>
           <p className="text-sm text-gray-500 mt-1">Please sign in to your account</p>
         </div>
+
+        {authError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg flex items-center gap-2 text-sm">
+            <AlertCircle size={16} />
+            {authError}
+          </div>
+        )}
 
         {/* Role Toggle */}
         <div className="flex bg-gray-100 p-1 rounded-lg mb-6">
@@ -105,7 +134,7 @@ const Login = ({ onLogin }) => {
         </form>
 
         <div className="mt-6 text-center text-sm text-gray-500">
-          Demo: Any email works. Try <span className="font-medium text-gray-700">parent@test.com</span>
+          Demo: Use <span className="font-medium text-gray-700">parent@demo.com</span> and password <span className="font-medium text-gray-700">password123</span>
         </div>
       </div>
     </div>

@@ -2,6 +2,14 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import App from './App';
+import api from './services/api';
+
+vi.mock('./services/api', () => ({
+  default: {
+    post: vi.fn(),
+    interceptors: { request: { use: vi.fn() }, response: { use: vi.fn() } }
+  }
+}));
 
 // Mock the components rendered by App so we can test routing logic without deep rendering
 vi.mock('./ParentDashboard', () => ({
@@ -23,6 +31,24 @@ vi.mock('./TeacherDashboard', () => ({
 }));
 
 describe('App Component', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    localStorage.clear();
+    api.post.mockResolvedValue({
+      data: {
+        data: {
+          token: 'mock-token',
+          user: {
+            email: 'test@parent.com',
+            role: 'parent',
+            guardian_id: 'g1',
+            first_name: 'Test'
+          }
+        }
+      }
+    });
+  });
+
   it('renders Login component initially', () => {
     render(<App />);
     expect(screen.getByText('Welcome Back')).toBeInTheDocument();
@@ -43,6 +69,19 @@ describe('App Component', () => {
   });
 
   it('navigates to TeacherDashboard on teacher login', async () => {
+    api.post.mockResolvedValue({
+      data: {
+        data: {
+          token: 'mock-token',
+          user: {
+            email: 'teacher@domain.com',
+            role: 'teacher',
+            first_name: 'Teacher'
+          }
+        }
+      }
+    });
+
     render(<App />);
     
     // Switch to teacher

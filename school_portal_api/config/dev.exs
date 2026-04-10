@@ -2,8 +2,8 @@ import Config
 
 # Configure your database
 config :school_portal_api, SchoolPortalApi.Repo,
-  username: "postgres",
-  password: "postgres",
+  username: "ryankiswii",
+  password: "",
   hostname: "localhost",
   database: "school_portal_api_dev",
   stacktrace: true,
