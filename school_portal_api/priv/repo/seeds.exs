@@ -44,6 +44,25 @@ guardian_user =
 
 guardian = Accounts.get_guardian_by_user_id(guardian_user.id)
 
+# ── Demo teacher account ─────────────────────────────────────────────────────
+
+case Accounts.get_user_by_email("teacher@demo.com") do
+  nil ->
+    {:ok, _user} =
+      Accounts.create_user(%{
+        "email" => "teacher@demo.com",
+        "password" => "password123",
+        "first_name" => "Sarah",
+        "last_name" => "Johnson",
+        "role" => "teacher"
+      })
+
+    IO.puts("Created demo teacher: teacher@demo.com / password123")
+
+  _user ->
+    IO.puts("Demo teacher already exists, skipping.")
+end
+
 # ── Student 1: Gladys ────────────────────────────────────────────────────────
 
 gladys =
