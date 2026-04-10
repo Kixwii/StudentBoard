@@ -6,68 +6,9 @@ import {
   MessageSquare
 } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:4000/api';
-
-const api = {
-  request: async (endpoint, options = {}) => {
-    const token = localStorage.getItem('auth_token');
-    const headers = {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
-    };
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
-    if (response.status === 401) {
-      localStorage.removeItem('auth_token');
-      window.location.href = '/login';
-      throw new Error('Unauthorized');
-    }
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Request failed');
-    }
-    return await response.json();
-  },
-  get: (endpoint) => api.request(endpoint, { method: 'GET' }),
-  post: (endpoint, data) => api.request(endpoint, { method: 'POST', body: JSON.stringify(data) }),
-  put: (endpoint, data) => api.request(endpoint, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (endpoint) => api.request(endpoint, { method: 'DELETE' }),
-};
-
-const guardianService = {
-  getStudents: async (guardianId) => {
-    const response = await api.get(`/guardians/${encodeURIComponent(guardianId)}/students`);
-    return response.data;
-  },
-  getStudentPerformance: async (guardianId, studentId) => {
-    const response = await api.get(
-      `/guardians/${encodeURIComponent(guardianId)}/students/${encodeURIComponent(studentId)}/performance`
-    );
-    return response.data;
-  },
-  makePayment: async (guardianId, paymentData) => {
-    const response = await api.post(`/guardians/${encodeURIComponent(guardianId)}/payments`, paymentData);
-    return response.data;
-  },
-};
-
-const feeService = {
-  getAccount: async (studentId) => {
-    const response = await api.get(`/fees/accounts/${encodeURIComponent(studentId)}`);
-    return response.data;
-  },
-  getTransactions: async (studentId) => {
-    const response = await api.get(`/fees/accounts/${encodeURIComponent(studentId)}/transactions`);
-    return response.data;
-  },
-};
-
-const documentService = {
-  getDocuments: async (studentId) => {
-    const response = await api.get(`/students/${encodeURIComponent(studentId)}/documents`);
-    return response.data;
-  },
-};
+import { guardianService } from './services/guardianService';
+import { feeService } from './services/feeService';
+import { documentService } from './services/documentService';
 
 const ParentDashboard = ({ user, onLogout }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
