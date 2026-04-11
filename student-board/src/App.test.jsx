@@ -1,9 +1,10 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import App from './App';
 import api from './services/api';
 
+// Mock the services
 vi.mock('./services/api', () => ({
   default: {
     post: vi.fn(),
@@ -51,17 +52,17 @@ describe('App Component', () => {
 
   it('renders Login component initially', () => {
     render(<App />);
-    expect(screen.getByText('Welcome Back')).toBeInTheDocument();
+    expect(screen.getByText('EduPortal')).toBeInTheDocument();
   });
 
   it('navigates to ParentDashboard on parent login', async () => {
     render(<App />);
-    
+
     // Fill credentials and click parent login
-    fireEvent.change(screen.getByPlaceholderText('Parent Email'), { target: { value: 'parent@domain.com' } });
-    fireEvent.change(screen.getByPlaceholderText('Password'), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByPlaceholderText('parent@school.com'), { target: { value: 'parent@domain.com' } });
+    fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'password123' } });
     fireEvent.click(screen.getByRole('button', { name: /Sign In as Parent/i }));
-    
+
     // Wait for the async login timeout inside Login.jsx
     await waitFor(() => {
       expect(screen.getByTestId('parent-dashboard')).toBeInTheDocument();
@@ -83,15 +84,15 @@ describe('App Component', () => {
     });
 
     render(<App />);
-    
+
     // Switch to teacher
     fireEvent.click(screen.getByText('Teacher'));
-    
+
     // Fill credentials and click teacher login
-    fireEvent.change(screen.getByPlaceholderText('Teacher Email'), { target: { value: 'teacher@domain.com' } });
-    fireEvent.change(screen.getByPlaceholderText('Password'), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByPlaceholderText('teacher@school.com'), { target: { value: 'teacher@domain.com' } });
+    fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'password123' } });
     fireEvent.click(screen.getByRole('button', { name: /Sign In as Teacher/i }));
-    
+
     // Wait for the async login timeout inside Login.jsx
     await waitFor(() => {
       expect(screen.getByTestId('teacher-dashboard')).toBeInTheDocument();
@@ -100,20 +101,20 @@ describe('App Component', () => {
 
   it('logs out and goes back to login', async () => {
     render(<App />);
-    
+
     // Login first
-    fireEvent.change(screen.getByPlaceholderText('Parent Email'), { target: { value: 'parent@domain.com' } });
-    fireEvent.change(screen.getByPlaceholderText('Password'), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByPlaceholderText('parent@school.com'), { target: { value: 'parent@domain.com' } });
+    fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'password123' } });
     fireEvent.click(screen.getByRole('button', { name: /Sign In as Parent/i }));
-    
+
     await waitFor(() => {
       expect(screen.getByTestId('parent-dashboard')).toBeInTheDocument();
     }, { timeout: 1500 });
 
     // Click mock logout
     fireEvent.click(screen.getByText('Logout'));
-    
+
     // Should be back at login
-    expect(screen.getByText('Welcome Back')).toBeInTheDocument();
+    expect(screen.getByText('EduPortal')).toBeInTheDocument();
   });
 });

@@ -1,47 +1,93 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import TeacherDashboard from './TeacherDashboard';
+import * as mockDataService from './services/mockDataService';
 
-// TeacherDashboard uses local mock services heavily or direct fetch. 
-// We will mock the mockDataService directly.
+// Mock the mockDataService
 vi.mock('./services/mockDataService', () => ({
-  getAllStudents: vi.fn().mockReturnValue([
-    { id: '1', name: 'Alice Smith', grade: '10', class: 'A', photo: 'A' },
-    { id: '2', name: 'Bob Jones', grade: '10', class: 'A', photo: 'B' }
-  ]),
-  getStudentsByTeacher: vi.fn().mockReturnValue([
-    { id: '1', name: 'Alice Smith', grade: '10', class: 'A', photo: 'A' },
-    { id: '2', name: 'Bob Jones', grade: '10', class: 'A', photo: 'B' }
-  ]),
-  getTeacherClasses: vi.fn().mockReturnValue([
-    { id: 'c1', name: '10th Grade Math', time: '9:00 AM' }
-  ]),
-  getStudentAcademic: vi.fn().mockReturnValue({ currentGPA: 3.8 })
+  getAllStudents: vi.fn(),
+  getStudentAcademic: vi.fn(),
+  updateStudentAcademic: vi.fn(),
 }));
 
 describe('TeacherDashboard Component', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+    localStorage.clear();
   });
 
   const mockUser = {
-    username: 'teacher@domain.com',
+    username: 'teacher@demo.com',
     firstName: 'Sarah',
+    userType: 'teacher'
   };
 
-  it('renders the teacher dashboard with initial mock data', async () => {
+  const mockStudents = [
+    { id: 's1', name: 'Alice Smith', grade: '10th', photo: '👩' },
+    { id: 's2', name: 'Bob Jones', grade: '10th', photo: '👦' }
+  ];
+
+  const mockAcademic = {
+    attendance: { totalDays: 100, present: 95, absent: 5, late: 0 },
+    currentGPA: 3.8,
+    subjects: [
+      { name: 'Math', score: 90, maxScore: 100, grade: 'A' }
+    ],
+    behavioralAssessment: 'Good student.'
+  };
+
+  it('renders classroom overview initially', async () => {
+    mockDataService.getAllStudents.mockReturnValue(mockStudents);
+    mockDataService.getStudentAcademic.mockReturnValue(mockAcademic);
+
     render(<TeacherDashboard user={mockUser} onLogout={vi.fn()} />);
 
-    await waitFor(() => {
-      expect(screen.getByText(/Welcome, Sarah!/i)).toBeInTheDocument();
-    });
+    expect(screen.getByText(/Sarah 🍎/i)).toBeInTheDocument();
+    expect(screen.getByText(/2 students in your classroom/i)).toBeInTheDocument();
+    expect(screen.getByText('Alice')).toBeInTheDocument();
+    expect(screen.getByText('Bob')).toBeInTheDocument();
+  });
 
-    // Overview
-    expect(screen.getByText('Manage your students and their academic progress')).toBeInTheDocument();
-    
-    // Check navigation
-    expect(screen.getByText('My Classroom')).toBeInTheDocument();
-    expect(screen.getByText('Class Analytics')).toBeInTheDocument();
+  it('navigates to student detail when a student card is clicked', async () => {
+    mockDataService.getAllStudents.mockReturnValue(mockStudents);
+    mockDataService.getStudentAcademic.mockReturnValue(mockAcademic);
+
+    render(<TeacherDashboard user={mockUser} onLogout={vi.fn()} />);
+
+    fireEvent.click(screen.getByText('Alice'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Alice Smith')).toBeInTheDocument();
+      expect(screen.getByText(/ID: s1/i)).toBeInTheDocument();
+      expect(screen.getByText('Subject Grades')).toBeInTheDocument();
+    });
+  });
+
+  it('opens profile photo modal when top bar avatar is clicked', async () => {
+    mockDataService.getAllStudents.mockReturnValue(mockStudents);
+    mockDataService.getStudentAcademic.mockReturnValue(mockAcademic);
+
+    render(<TeacherDashboard user={mockUser} onLogout={vi.fn()} />);
+
+    // Top bar avatar
+    const avatars = screen.getAllByTitle('Edit profile photo');
+    fireEvent.click(avatars[0]);
+
+    expect(screen.getByText('Profile Photo')).toBeInTheDocument();
+    expect(screen.getAllByText('S').length).toBeGreaterThan(0); // Initial for Sarah (multiple may exist)
+  });
+
+  it('opens profile photo modal when hero card avatar is clicked', async () => {
+    mockDataService.getAllStudents.mockReturnValue(mockStudents);
+    mockDataService.getStudentAcademic.mockReturnValue(mockAcademic);
+
+    render(<TeacherDashboard user={mockUser} onLogout={vi.fn()} />);
+
+    // Hero card avatar has the same title
+    const avatars = screen.getAllByTitle('Edit profile photo');
+    fireEvent.click(avatars[1]); // The one in the hero card
+
+    expect(screen.getByText('Profile Photo')).toBeInTheDocument();
   });
 });

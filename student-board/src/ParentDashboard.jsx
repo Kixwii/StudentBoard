@@ -3,17 +3,194 @@ import {
   User, BookOpen, DollarSign, FileText, Download, Bell, LogOut,
   AlertCircle, Loader2, CreditCard, CheckCircle, Home, BarChart3,
   Menu, X, ChevronRight, TrendingUp, Calendar, Award, Clock,
-  MessageSquare
+  MessageSquare, GraduationCap, ArrowUpRight,
 } from 'lucide-react';
 
 import { guardianService } from './services/guardianService';
 import { feeService } from './services/feeService';
 import { documentService } from './services/documentService';
+import { useProfilePhoto } from './hooks/useProfilePhoto';
+import ProfilePhotoModal from './components/ProfilePhotoModal';
 
+// ── shared style tokens ──────────────────────────────────────
+const S = {
+  card: {
+    background: '#fff',
+    border: '1px solid #e8e8e8',
+    borderRadius: 20,
+  },
+  labelSm: { fontSize: '0.72rem', fontWeight: 600, color: '#9ca3af', letterSpacing: '0.04em', textTransform: 'uppercase' },
+  valueLg: { fontSize: '2rem', fontWeight: 800, color: '#1a1a1a', lineHeight: 1.1 },
+  sectionTitle: { fontSize: '1rem', fontWeight: 700, color: '#1a1a1a', margin: 0 },
+};
+
+const badgeStyle = (type = 'lime') => ({
+  display: 'inline-flex', alignItems: 'center', gap: 4,
+  padding: '2px 10px', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700,
+  ...(type === 'lime' ? { background: '#f7ffe0', color: '#4d7c0f', border: '1px solid #bef264' } :
+    type === 'orange' ? { background: '#fff5ed', color: '#c2410c', border: '1px solid #fdba74' } :
+      { background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe' }),
+});
+
+// ── mini stat card ───────────────────────────────────────────
+const StatCard = ({ label, value, badge, badgeType, sub, icon: Icon, iconBg }) => (
+  <div style={{ ...S.card, padding: '1rem', display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ width: 36, height: 36, borderRadius: 10, background: iconBg || '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Icon size={18} color={iconBg ? '#1a1a1a' : '#6b7280'} />
+      </div>
+      {badge && <span style={badgeStyle(badgeType)}>{badge}</span>}
+    </div>
+    <div>
+      <div style={S.labelSm}>{label}</div>
+      <div style={S.valueLg}>{value}</div>
+    </div>
+    {sub && <div style={{ fontSize: '0.72rem', color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 4 }}>{sub}</div>}
+  </div>
+);
+
+// ── progress bar ─────────────────────────────────────────────
+const ProgressBar = ({ pct, color = '#a3e635' }) => (
+  <div style={{ height: 6, background: '#f3f4f6', borderRadius: 99, overflow: 'hidden' }}>
+    <div style={{ height: '100%', width: `${Math.min(100, pct)}%`, background: color, borderRadius: 99, transition: 'width 0.6s' }} />
+  </div>
+);
+
+// ── sidebar ──────────────────────────────────────────────────
+const Sidebar = ({ open, onClose, onToggle, navItems, activeTab, onNav, children: childList, selectedChild, onSelectChild, onLogout }) => {
+  const sidebarW = open ? 224 : 0;
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.35)',
+          zIndex: 30,
+          opacity: open ? 1 : 0,
+          visibility: open ? 'visible' : 'hidden',
+          transition: 'opacity 0.3s ease, visibility 0.3s ease',
+          pointerEvents: open ? 'auto' : 'none',
+        }}
+        className="sm-hidden"
+      />
+
+      {/* Panel */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        bottom: 0,
+        zIndex: 40,
+        width: 224,
+        background: '#fff',
+        borderRight: '1px solid #e8e8e8',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s ease, box-shadow 0.3s ease',
+        transform: open ? 'translateX(0)' : 'translateX(-100%)',
+        visibility: open ? 'visible' : 'hidden',
+        boxShadow: open ? '4px 0 24px rgba(0,0,0,0.08)' : 'none',
+      }}>
+        {/* Brand */}
+        <div style={{ padding: '1.25rem 1rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #f3f4f6', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <GraduationCap size={18} color="#a3e635" />
+            </div>
+            <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#1a1a1a' }}>EduPortal</span>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: 4, display: 'flex' }}>
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Scrollable Content Area */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {/* Children */}
+          {childList.length > 0 && (
+            <div style={{ padding: '0.875rem 0.75rem', borderBottom: '1px solid #f3f4f6' }}>
+              <div style={{ ...S.labelSm, marginBottom: 8, paddingLeft: 4 }}>My Children</div>
+              {childList.map((child, i) => (
+                <button
+                  key={i}
+                  onClick={() => { onSelectChild(i); onClose(); }}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '0.625rem 0.75rem',
+                    borderRadius: 12,
+                    border: 'none',
+                    cursor: 'pointer',
+                    marginBottom: 4,
+                    transition: 'all 0.15s',
+                    textAlign: 'left',
+                    background: selectedChild === i ? '#f5f7fa' : 'transparent',
+                    outline: selectedChild === i ? '2px solid #e8e8e8' : 'none',
+                  }}
+                >
+                  <span style={{ fontSize: '1.25rem' }}>{child.photo}</span>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.82rem', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{child.name?.split(' ')[0]}</div>
+                    <div style={{ fontSize: '0.72rem', color: '#9ca3af' }}>{child.grade}</div>
+                  </div>
+                  {selectedChild === i && <div style={{ marginLeft: 'auto', width: 6, height: 6, borderRadius: 99, background: '#a3e635', flexShrink: 0 }} />}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Nav */}
+          <nav style={{ padding: '0.875rem 0.75rem', display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <div style={{ ...S.labelSm, marginBottom: 8, paddingLeft: 4 }}>Navigation</div>
+            {navItems.map(item => {
+              const active = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => { onNav(item.id); onClose(); }}
+                  className="nav-item"
+                  style={{
+                    background: active ? '#1a1a1a' : 'transparent',
+                    color: active ? '#fff' : '#6b7280',
+                  }}
+                >
+                  <item.icon size={17} style={{ flexShrink: 0 }} />
+                  <span>{item.label}</span>
+                  {active && <ChevronRight size={14} style={{ marginLeft: 'auto', opacity: 0.6 }} />}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Logout */}
+        <div style={{ padding: '0.75rem', borderTop: '1px solid #f3f4f6', flexShrink: 0 }}>
+          <button
+            onClick={onLogout}
+            className="nav-item"
+            style={{ color: '#ef4444' }}
+          >
+            <LogOut size={17} style={{ flexShrink: 0 }} />
+            <span>Logout</span>
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
+
+// ── main component ───────────────────────────────────────────
 const ParentDashboard = ({ user, onLogout }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedChild, setSelectedChild] = useState(0);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -21,34 +198,31 @@ const ParentDashboard = ({ user, onLogout }) => {
   const [academicData, setAcademicData] = useState(null);
   const [feeData, setFeeData] = useState(null);
   const [documents, setDocuments] = useState([]);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+
+  const { photo: profilePhoto, savePhoto, removePhoto } = useProfilePhoto(user?.username);
 
   useEffect(() => {
     const fetchChildren = async () => {
       if (!user?.guardianId) return;
-
       try {
         const studentsData = await guardianService.getStudents(user.guardianId);
-        if (studentsData && studentsData.length > 0) {
-          setChildren(studentsData);
-        }
+        if (studentsData?.length > 0) setChildren(studentsData);
         setError(null);
         setLoading(false);
       } catch (err) {
         console.error('API Error fetching children:', err);
-        setError("Could not load children data");
+        setError('Could not load children data');
         setLoading(false);
       }
     };
-
     fetchChildren();
   }, [user?.guardianId]);
 
   useEffect(() => {
     const fetchStudentData = async () => {
       if (!children[selectedChild]) return;
-
       const studentId = children[selectedChild].id || children[selectedChild].studentId;
-      
       setLoading(true);
       try {
         const [performance, feeAccount, transactions, docs] = await Promise.all([
@@ -57,22 +231,18 @@ const ParentDashboard = ({ user, onLogout }) => {
           feeService.getTransactions(studentId),
           documentService.getDocuments(studentId),
         ]);
-
         if (performance) setAcademicData(performance);
         if (feeAccount) setFeeData({ ...feeAccount, paymentHistory: transactions || [] });
         if (docs) setDocuments(docs);
         setError(null);
       } catch (err) {
         console.error('API Error fetching student detail:', err);
-        setError("Could not load full student details");
+        setError('Could not load full student details');
       } finally {
         setLoading(false);
       }
     };
-
-    if (children.length > 0) {
-      fetchStudentData();
-    }
+    if (children.length > 0) fetchStudentData();
   }, [children, selectedChild, user?.guardianId]);
 
   const navItems = [
@@ -87,236 +257,243 @@ const ParentDashboard = ({ user, onLogout }) => {
     return Math.round((att.present / att.totalDays) * 100);
   };
 
+  // ── Dashboard view ───────────────────────────────────────
   const DashboardView = () => {
     const att = academicData?.attendance || { totalDays: 0, present: 0, absent: 0, late: 0 };
     const attRate = getAttendanceRate(att);
 
     return (
-      <div className="space-y-6">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-500 to-green-500 p-8 text-white">
-          <div className="relative z-10">
-            <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.firstName}! 👋</h1>
-            <p className="text-blue-100">Here's what's happening with {children[selectedChild]?.name}'s education</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        {/* Header greeting */}
+        <div style={{ ...S.card, padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div>
+            <div style={S.labelSm}>Welcome back</div>
+            <h1 style={{ ...S.valueLg, fontSize: '1.35rem', marginTop: 2 }}>
+              {user?.firstName || 'Parent'} 👋
+            </h1>
+            <p style={{ fontSize: '0.82rem', color: '#9ca3af', marginTop: 4 }}>
+              Viewing {children[selectedChild]?.name?.split(' ')[0]}'s progress
+            </p>
           </div>
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32"></div>
-          <div className="absolute bottom-0 right-0 w-48 h-48 bg-white/10 rounded-full -mr-24 -mb-24"></div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <Award className="text-blue-600" size={24} />
-              </div>
-              <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">{academicData?.currentGPA >= 3.0 ? 'Great' : 'Avg'}</span>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0, alignItems: 'center' }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: '#f5f7fa', border: '1px solid #e8e8e8', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              <Bell size={18} color="#6b7280" />
             </div>
-            <h3 className="text-gray-500 text-sm font-medium mb-1">Current GPA</h3>
-            <p className="text-3xl font-bold text-gray-900">{academicData?.currentGPA || 0}</p>
-            <div className="mt-2 flex items-center text-xs text-gray-500">
-              <TrendingUp size={14} className="mr-1" />
-              <span>Overall Performance</span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-green-50 rounded-lg">
-                <Calendar className="text-green-600" size={24} />
-              </div>
-              <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">{attRate >= 90 ? 'Excellent' : 'Needs attention'}</span>
-            </div>
-            <h3 className="text-gray-500 text-sm font-medium mb-1">Attendance</h3>
-            <p className="text-3xl font-bold text-gray-900">{attRate}%</p>
-            <div className="mt-2 flex items-center text-xs text-gray-500">
-              <Clock size={14} className="mr-1" />
-              <span>Rate this semester</span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-orange-50 rounded-lg">
-                <DollarSign className="text-orange-600" size={24} />
-              </div>
-              <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded-full">Due Soon</span>
-            </div>
-            <h3 className="text-gray-500 text-sm font-medium mb-1">Balance Due</h3>
-            <p className="text-3xl font-bold text-gray-900">${feeData?.currentBalance?.toFixed(2) || '0.00'}</p>
-            <div className="mt-2 flex items-center text-xs text-gray-500">
-              <Calendar size={14} className="mr-1" />
-              <span>Due: {feeData?.dueDate || 'N/A'}</span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <FileText className="text-blue-600" size={24} />
-              </div>
-            </div>
-            <h3 className="text-gray-500 text-sm font-medium mb-1">Documents</h3>
-            <p className="text-3xl font-bold text-gray-900">{documents?.length || 0}</p>
-            <div className="mt-2 flex items-center text-xs text-gray-500">
-              <Download size={14} className="mr-1" />
-              <span>Available to download</span>
-            </div>
+            {/* Profile photo — clickable to open modal */}
+            <button
+              onClick={() => setShowPhotoModal(true)}
+              title="Edit profile photo"
+              style={{ width: 44, height: 44, borderRadius: 14, border: '2px solid #e8e8e8', overflow: 'hidden', cursor: 'pointer', flexShrink: 0, background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+            >
+              {profilePhoto
+                ? <img src={profilePhoto} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#a3e635' }}>{(user?.firstName?.[0] || 'P').toUpperCase()}</span>
+              }
+            </button>
           </div>
         </div>
 
-        {/* Behavioral Assessment and Attendance Detail Banner */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-pink-50 rounded-lg text-pink-600">
-                  <MessageSquare size={20} />
+        {/* Stat cards – 2 col on mobile, 4 on desktop */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
+          <StatCard
+            label="Current GPA"
+            value={academicData?.currentGPA || '—'}
+            badge={academicData?.currentGPA >= 3.0 ? 'High' : 'Avg'}
+            badgeType={academicData?.currentGPA >= 3.0 ? 'lime' : 'orange'}
+            icon={Award}
+            iconBg="#f0fdf4"
+            sub={<><TrendingUp size={11} /> Overall performance</>}
+          />
+          <StatCard
+            label="Attendance"
+            value={`${attRate}%`}
+            badge={attRate >= 90 ? 'High' : 'Watch'}
+            badgeType={attRate >= 90 ? 'lime' : 'orange'}
+            icon={Calendar}
+            iconBg="#f0fdf4"
+            sub={<><Clock size={11} /> This semester</>}
+          />
+          <StatCard
+            label="Balance Due"
+            value={`$${feeData?.currentBalance?.toFixed(0) || '0'}`}
+            badge="Due"
+            badgeType="orange"
+            icon={DollarSign}
+            iconBg="#fff5ed"
+            sub={<><Calendar size={11} /> {feeData?.dueDate || 'N/A'}</>}
+          />
+          <StatCard
+            label="Documents"
+            value={documents?.length || 0}
+            badge="View"
+            badgeType="blue"
+            icon={FileText}
+            iconBg="#eff6ff"
+            sub={<><Download size={11} /> Available</>}
+          />
+        </div>
+
+        {/* Attendance breakdown */}
+        <div style={{ ...S.card, padding: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <p style={S.sectionTitle}>Attendance Details</p>
+            <span style={badgeStyle(attRate >= 90 ? 'lime' : 'orange')}>{attRate}% rate</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+            {[
+              { label: 'Total', value: att.totalDays, style: { background: '#f5f7fa', color: '#1a1a1a' } },
+              { label: 'Present', value: att.present, style: { background: '#f0fdf4', color: '#16a34a' } },
+              { label: 'Absent', value: att.absent, style: { background: '#fef2f2', color: '#dc2626' } },
+              { label: 'Late', value: att.late, style: { background: '#fefce8', color: '#ca8a04' } },
+            ].map(item => (
+              <div key={item.label} style={{ borderRadius: 12, padding: '0.625rem 0.5rem', textAlign: 'center', ...item.style }}>
+                <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{item.value}</div>
+                <div style={{ fontSize: '0.7rem', opacity: 0.8, fontWeight: 500 }}>{item.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Subject performance */}
+        <div style={{ ...S.card, padding: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <p style={S.sectionTitle}>Subject Performance</p>
+            <button onClick={() => setActiveTab('academic')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 4 }}>
+              View all <ArrowUpRight size={13} />
+            </button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+            {academicData?.subjects?.slice(0, 4).map((subject, i) => {
+              const pct = subject.maxScore ? (subject.score / subject.maxScore) * 100 : 0;
+              return (
+                <div key={i}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1a1a1a' }}>{subject.name}</span>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1a1a1a' }}>
+                      {subject.score}<span style={{ color: '#9ca3af', fontWeight: 400 }}>/{subject.maxScore}</span>
+                    </span>
+                  </div>
+                  <ProgressBar pct={pct} color={pct >= 80 ? '#a3e635' : pct >= 60 ? '#fb923c' : '#ef4444'} />
                 </div>
-                <h2 className="text-lg font-bold text-gray-900">Behavior & Conduct</h2>
-              </div>
-            </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-gray-700 italic">
-                "{academicData?.behavioralAssessment || "No notes to display."}"
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm grid grid-cols-4 gap-4 text-center items-center">
-            <div className="col-span-4 flex justify-between items-center mb-2">
-              <h2 className="text-lg font-bold text-gray-900">Attendance Details</h2>
-              <span className="font-bold text-green-600">{attRate}% Rate</span>
-            </div>
-            <div className="p-3 bg-gray-50 rounded-lg"><div className="font-bold text-gray-900 text-xl">{att.totalDays}</div><div className="text-gray-500 text-xs mt-1">Total Days</div></div>
-            <div className="p-3 bg-green-50 rounded-lg"><div className="font-bold text-green-700 text-xl">{att.present}</div><div className="text-green-600 text-xs mt-1">Present</div></div>
-            <div className="p-3 bg-red-50 rounded-lg"><div className="font-bold text-red-700 text-xl">{att.absent}</div><div className="text-red-600 text-xs mt-1">Absent</div></div>
-            <div className="p-3 bg-yellow-50 rounded-lg"><div className="font-bold text-yellow-700 text-xl">{att.late}</div><div className="text-yellow-600 text-xs mt-1">Late</div></div>
+              );
+            })}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-gray-900">Subject Performance</h2>
-              <button className="text-sm text-blue-600 hover:text-blue-700 font-medium" onClick={() => setActiveTab('academic')}>View All</button>
+        {/* Behavioral assessment */}
+        <div style={{ ...S.card, padding: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.875rem' }}>
+            <div style={{ width: 32, height: 32, borderRadius: 10, background: '#fdf4ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <MessageSquare size={16} color="#a855f7" />
             </div>
-            <div className="space-y-4">
-              {academicData?.subjects?.slice(0, 4).map((subject, index) => {
-                const ratio = subject.maxScore ? (subject.score / subject.maxScore) * 100 : 0;
-                return (
-                  <div key={index} className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-900">{subject.name}</span>
-                        <span className="text-sm font-bold text-gray-900">
-                          {subject.score} <span className="text-gray-400 font-normal">/ {subject.maxScore}</span>
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-100 rounded-full h-2">
-                        <div
-                          className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all"
-                          style={{ width: `${ratio}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+            <p style={S.sectionTitle}>Behaviour & Conduct</p>
           </div>
+          <div style={{ background: '#f5f7fa', borderRadius: 12, padding: '0.875rem', fontSize: '0.85rem', color: '#374151', fontStyle: 'italic', lineHeight: 1.6 }}>
+            "{academicData?.behavioralAssessment || 'No notes to display.'}"
+          </div>
+        </div>
 
-          <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-gray-900">Recent Assignments</h2>
-              <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">View All</button>
-            </div>
-            <div className="space-y-4">
-              {academicData?.recentAssignments?.map((assignment, index) => (
-                <div key={index} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <BookOpen className="text-blue-600" size={20} />
+        {/* Recent assignments */}
+        {academicData?.recentAssignments?.length > 0 && (
+          <div style={{ ...S.card, padding: '1.25rem' }}>
+            <p style={{ ...S.sectionTitle, marginBottom: '1rem' }}>Recent Assignments</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+              {academicData.recentAssignments.map((a, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0.75rem', background: '#f5f7fa', borderRadius: 12 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <BookOpen size={16} color="#3b82f6" />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-medium text-gray-900 mb-1">{assignment.assignment}</h3>
-                    <p className="text-xs text-gray-500">{assignment.subject}</p>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.83rem', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.assignment}</div>
+                    <div style={{ fontSize: '0.72rem', color: '#9ca3af' }}>{a.subject}</div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-sm font-bold text-green-600">{assignment.score}</span>
-                    <p className="text-xs text-gray-500">{assignment.date}</p>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#16a34a' }}>{a.score}</div>
+                    <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>{a.date}</div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-        </div>
+        )}
       </div>
     );
   };
 
+  // ── Academic view ────────────────────────────────────────
   const AcademicView = () => (
-    <div className="space-y-6">
-      <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Academic Overview & Grades</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {academicData?.subjects?.map((subject, index) => {
-            const ratio = subject.maxScore ? (subject.score / subject.maxScore) * 100 : 0;
-            return (
-              <div key={index} className="p-6 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-100">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-gray-900">{subject.name}</h3>
-                  <span className="text-2xl font-bold text-blue-600">{subject.grade}</span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      <p style={{ ...S.sectionTitle, fontSize: '1.15rem' }}>Academic Overview</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(1, 1fr)', gap: '0.75rem' }}>
+        {academicData?.subjects?.map((subject, i) => {
+          const pct = subject.maxScore ? (subject.score / subject.maxScore) * 100 : 0;
+          const grade = subject.grade || (pct >= 90 ? 'A' : pct >= 80 ? 'B' : pct >= 70 ? 'C' : 'D');
+          return (
+            <div key={i} style={{ ...S.card, padding: '1.125rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div>
+                  <div style={{ fontWeight: 700, color: '#1a1a1a', fontSize: '0.9rem' }}>{subject.name}</div>
+                  {subject.teacher && <div style={{ fontSize: '0.72rem', color: '#9ca3af', marginTop: 2 }}>{subject.teacher}</div>}
                 </div>
-                <p className="text-sm text-gray-600 mb-4">Teacher: {subject.teacher}</p>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full"
-                    style={{ width: `${ratio}%` }}
-                  ></div>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1a1a1a' }}>{grade}</span>
                 </div>
-                <p className="text-sm font-bold text-gray-900 mt-2">{subject.score} <span className="text-gray-500 font-medium text-xs">/ {subject.maxScore}</span></p>
               </div>
-            )
-          })}
-        </div>
+              <ProgressBar pct={pct} color={pct >= 80 ? '#a3e635' : pct >= 60 ? '#fb923c' : '#ef4444'} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+                <div style={{ fontSize: '0.72rem', color: '#9ca3af' }}>{subject.score} / {subject.maxScore}</div>
+                <div style={{ fontSize: '0.72rem', fontWeight: 600, color: pct >= 80 ? '#4d7c0f' : '#c2410c' }}>{pct.toFixed(0)}%</div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 
+  // ── Fees view ────────────────────────────────────────────
   const FeesView = () => (
-    <div className="space-y-6">
-      <div className="bg-gradient-to-br from-orange-500 to-pink-500 rounded-xl p-8 text-white">
-        <h2 className="text-2xl font-bold mb-2">Current Balance</h2>
-        <p className="text-5xl font-bold mb-4">${feeData?.currentBalance?.toFixed(2) || '0.00'}</p>
-        <p className="text-orange-100 mb-6">Due: {feeData?.dueDate || 'N/A'}</p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      {/* Balance hero card */}
+      <div style={{ background: '#1a1a1a', borderRadius: 20, padding: '1.5rem', color: '#fff' }}>
+        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>Current Balance</div>
+        <div style={{ fontSize: '2.5rem', fontWeight: 900, lineHeight: 1.1, marginBottom: 6 }}>${feeData?.currentBalance?.toFixed(2) || '0.00'}</div>
+        <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginBottom: '1.25rem' }}>Due: {feeData?.dueDate || 'N/A'}</div>
         {feeData?.currentBalance > 0 && (
-          <button className="bg-white text-orange-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors flex items-center gap-2">
-            <CreditCard size={20} />
-            Make Payment
+          <button style={{
+            display: 'flex', alignItems: 'center', gap: 8, padding: '0.625rem 1rem',
+            background: '#a3e635', color: '#1a1a1a', border: 'none', borderRadius: 12,
+            fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', fontFamily: 'inherit',
+          }}>
+            <CreditCard size={16} /> Make Payment
           </button>
         )}
       </div>
 
-      <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Fee Breakdown</h2>
-        <div className="space-y-3">
-          {feeData?.breakdown?.map((item, index) => (
-            <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <span className="text-gray-900 font-medium">{item.category}</span>
-              <span className="text-gray-900 font-bold">${item.amount.toFixed(2)}</span>
+      {/* Breakdown */}
+      <div style={{ ...S.card, padding: '1.25rem' }}>
+        <p style={{ ...S.sectionTitle, marginBottom: '0.875rem' }}>Fee Breakdown</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          {feeData?.breakdown?.map((item, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: '#f5f7fa', borderRadius: 12 }}>
+              <span style={{ fontSize: '0.875rem', color: '#374151' }}>{item.category}</span>
+              <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#1a1a1a' }}>${item.amount.toFixed(2)}</span>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Payment History</h2>
-        <div className="space-y-3">
-          {feeData?.paymentHistory?.map((payment, index) => (
-            <div key={index} className="flex items-center justify-between p-4 border-l-4 border-green-500 bg-green-50 rounded-lg">
+      {/* Payment history */}
+      <div style={{ ...S.card, padding: '1.25rem' }}>
+        <p style={{ ...S.sectionTitle, marginBottom: '0.875rem' }}>Payment History</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          {feeData?.paymentHistory?.map((payment, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.875rem', background: '#f0fdf4', borderRadius: 12, borderLeft: '3px solid #a3e635' }}>
               <div>
-                <p className="font-medium text-gray-900">{payment.description}</p>
-                <p className="text-sm text-gray-600">{payment.date} • {payment.method}</p>
+                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1a1a1a' }}>{payment.description}</div>
+                <div style={{ fontSize: '0.72rem', color: '#9ca3af', marginTop: 2 }}>{payment.date} · {payment.method}</div>
               </div>
-              <span className="text-green-600 font-bold">-${payment.amount.toFixed(2)}</span>
+              <span style={{ fontWeight: 700, color: '#16a34a', fontSize: '0.875rem' }}>-${payment.amount.toFixed(2)}</span>
             </div>
           ))}
         </div>
@@ -324,18 +501,22 @@ const ParentDashboard = ({ user, onLogout }) => {
     </div>
   );
 
+  // ── Documents view ───────────────────────────────────────
   const DocumentsView = () => (
-    <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-      <h2 className="text-xl font-bold text-gray-900 mb-6">Available Documents</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {documents?.map((doc, index) => (
-          <div key={index} className="p-6 border-2 border-gray-100 rounded-xl hover:border-blue-500 transition-colors cursor-pointer">
-            <FileText className="text-blue-600 mb-4" size={32} />
-            <h3 className="font-bold text-gray-900 mb-2">{doc.name}</h3>
-            <p className="text-sm text-gray-600 mb-4">Updated: {doc.updated}</p>
-            <button className="w-full bg-blue-50 text-blue-600 py-2 rounded-lg font-medium hover:bg-blue-100 transition-colors flex items-center justify-center gap-2">
-              <Download size={16} />
-              Download
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      <p style={{ ...S.sectionTitle, fontSize: '1.15rem' }}>Available Documents</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(1, 1fr)', gap: '0.75rem' }}>
+        {documents?.map((doc, i) => (
+          <div key={i} style={{ ...S.card, padding: '1.125rem', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 42, height: 42, borderRadius: 12, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <FileText size={20} color="#3b82f6" />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.name}</div>
+              <div style={{ fontSize: '0.72rem', color: '#9ca3af', marginTop: 2 }}>Updated: {doc.updated}</div>
+            </div>
+            <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0.5rem 0.875rem', background: '#f5f7fa', border: '1px solid #e8e8e8', borderRadius: 10, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600, color: '#374151', flexShrink: 0, fontFamily: 'inherit' }}>
+              <Download size={14} /> Download
             </button>
           </div>
         ))}
@@ -355,88 +536,81 @@ const ParentDashboard = ({ user, onLogout }) => {
 
   if (loading && children.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading...</p>
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <Loader2 style={{ animation: 'spin 1s linear infinite', width: 40, height: 40, color: '#1a1a1a', margin: '0 auto 12px' }} />
+          <p style={{ color: '#9ca3af', fontSize: '0.875rem' }}>Loading your dashboard…</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-white border-r flex flex-col transition-all duration-300`}>
-        <div className="p-4 flex justify-between items-center border-b">
-          {sidebarOpen && <span className="font-bold">Menu</span>}
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 hover:bg-gray-100 rounded-lg">
-            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex' }}>
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+
+      <Sidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        onToggle={() => setSidebarOpen(o => !o)}
+        navItems={navItems}
+        activeTab={activeTab}
+        onNav={setActiveTab}
+        children={children}
+        selectedChild={selectedChild}
+        onSelectChild={setSelectedChild}
+        onLogout={onLogout}
+      />
+
+      {/* Main scroll area */}
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minWidth: 0 }}>
+        {/* Top bar */}
+        <div style={{ position: 'sticky', top: 0, zIndex: 20, background: 'rgba(245,247,250,0.9)', backdropFilter: 'blur(8px)', padding: '0.875rem 1rem', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid #e8e8e8' }}>
+          <button
+            onClick={() => setSidebarOpen(true)}
+            style={{ width: 38, height: 38, borderRadius: 10, background: '#fff', border: '1px solid #e8e8e8', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
+          >
+            <Menu size={18} color="#1a1a1a" />
+          </button>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {navItems.find(n => n.id === activeTab)?.label || 'Dashboard'}
+            </div>
+          </div>
+          {/* Clickable avatar */}
+          <button
+            onClick={() => setShowPhotoModal(true)}
+            title="Edit profile photo"
+            style={{ width: 36, height: 36, borderRadius: 12, border: '2px solid #e8e8e8', overflow: 'hidden', cursor: 'pointer', flexShrink: 0, background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+          >
+            {profilePhoto
+              ? <img src={profilePhoto} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#a3e635' }}>{(user?.firstName?.[0] || 'P').toUpperCase()}</span>
+            }
           </button>
         </div>
 
-        <div className="p-4 border-b border-gray-200">
-          {children.map((child, index) => (
-            <button
-              key={index}
-              onClick={() => setSelectedChild(index)}
-              className={`w-full p-3 rounded-lg mb-2 transition-all ${selectedChild === index
-                  ? 'bg-gradient-to-r from-blue-600 to-green-600 text-white'
-                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                }`}
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{child.photo}</span>
-                {sidebarOpen && (
-                  <div className="text-left">
-                    <p className="font-medium text-sm">{child.name.split(' ')[0]}</p>
-                    <p className="text-xs opacity-75">{child.grade}</p>
-                  </div>
-                )}
-              </div>
-            </button>
-          ))}
-        </div>
-
-        <nav className="flex-1 p-4">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 p-3 rounded-lg mb-2 transition-all ${activeTab === item.id
-                  ? 'bg-blue-50 text-blue-600 font-medium'
-                  : 'text-gray-600 hover:bg-gray-50'
-                }`}
-            >
-              <item.icon size={20} />
-              {sidebarOpen && <span>{item.label}</span>}
-              {sidebarOpen && activeTab === item.id && (
-                <ChevronRight size={16} className="ml-auto" />
-              )}
-            </button>
-          ))}
-        </nav>
-
-        <div className="p-4 border-t border-gray-200">
-          <button onClick={onLogout} className="w-full flex items-center gap-3 p-3 rounded-lg text-red-600 hover:bg-red-50 transition-colors">
-            <LogOut size={20} />
-            {sidebarOpen && <span>Logout</span>}
-          </button>
-        </div>
-      </div>
-
-      <main className="flex-1 overflow-y-auto">
-        <div className="p-8 max-w-7xl mx-auto">
+        {/* Content */}
+        <div style={{ padding: '1rem', maxWidth: 640, margin: '0 auto' }}>
           {error && (
-            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-3">
-              <AlertCircle className="text-yellow-600" size={20} />
-              <span className="text-sm text-yellow-800">
-                {error} - Using demo data
-              </span>
+            <div style={{ marginBottom: '0.875rem', padding: '0.75rem 1rem', background: '#fefce8', border: '1px solid #fde047', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem', color: '#854d0e' }}>
+              <AlertCircle size={15} style={{ flexShrink: 0 }} /> {error} – Using demo data
             </div>
           )}
           {renderContent()}
         </div>
-      </main>
+      </div>
+
+      {/* Profile photo modal */}
+      {showPhotoModal && (
+        <ProfilePhotoModal
+          currentPhoto={profilePhoto}
+          userName={user?.firstName || user?.username}
+          onSave={savePhoto}
+          onRemove={removePhoto}
+          onClose={() => setShowPhotoModal(false)}
+        />
+      )}
     </div>
   );
 };

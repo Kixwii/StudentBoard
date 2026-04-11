@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ParentDashboard from './ParentDashboard';
 import { guardianService } from './services/guardianService';
@@ -26,7 +26,7 @@ vi.mock('./services/documentService', () => ({
   }
 }));
 
-// Mock ResizeObserver for any chart components that might use it
+// Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
   observe() {}
   unobserve() {}
@@ -36,37 +36,55 @@ global.ResizeObserver = class ResizeObserver {
 describe('ParentDashboard Component', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    localStorage.clear();
   });
 
   const mockUser = {
-    guardianId: 'parent@domain.com',
+    username: 'parent@demo.com',
     firstName: 'John',
+    guardianId: 'g1'
   };
 
   it('renders loading state initially', () => {
-    // If services reject or return empty, mockDataService handles fallback
-    guardianService.getStudents.mockResolvedValue([]);
+    guardianService.getStudents.mockReturnValue(new Promise(() => {})); // Never resolves
     
     render(<ParentDashboard user={mockUser} onLogout={vi.fn()} />);
     
-    // We expect loader to occasionally appear (depending on effect timing) or we check the welcome text
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
+    expect(screen.getByText(/Loading your dashboard…/i)).toBeInTheDocument();
   });
 
-  it('renders the dashboard when data is loaded via fallback or API', async () => {
-    // Return a mocked student to skip fallback if needed
+  it('renders the dashboard when data is loaded', async () => {
     guardianService.getStudents.mockResolvedValue([{ id: 's1', name: 'Alice', grade: '10th', photo: '👩' }]);
     
     render(<ParentDashboard user={mockUser} onLogout={vi.fn()} />);
 
     await waitFor(() => {
-      // The Welcome back header should appear
-      expect(screen.getByText(/Welcome back, John!/i)).toBeInTheDocument();
+      // Check for name with emoji
+      expect(screen.getByText(/John 👋/i)).toBeInTheDocument();
     });
 
-    // Check if sidebar nav is loaded
-    expect(screen.getByText('Dashboard')).toBeInTheDocument();
-    expect(screen.getByText('Academic')).toBeInTheDocument();
-    expect(screen.getByText('Logout')).toBeInTheDocument();
+    // Check branding
+    expect(screen.getAllByText('UpGradely').length).toBeGreaterThan(0);
+    
+    // Check main nav
+    expect(screen.getAllByText('Dashboard').length).toBeGreaterThan(0);
+  });
+
+  it('opens profile photo modal when avatar is clicked', async () => {
+    guardianService.getStudents.mockResolvedValue([{ id: 's1', name: 'Alice', grade: '10th', photo: '👩' }]);
+    
+    render(<ParentDashboard user={mockUser} onLogout={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/John 👋/i)).toBeInTheDocument();
+    });
+
+    // Finding avatars (top bar and greeting card)
+    const avatars = screen.getAllByTitle('Edit profile photo');
+    fireEvent.click(avatars[0]); // Click the top bar one
+
+    // Modal should appear
+    expect(screen.getByText('Profile Photo')).toBeInTheDocument();
+    expect(screen.getAllByText('J').length).toBeGreaterThan(0); // Initial for John (multiple may exist)
   });
 });
