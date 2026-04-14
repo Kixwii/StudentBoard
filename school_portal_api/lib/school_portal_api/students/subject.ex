@@ -9,6 +9,8 @@ defmodule SchoolPortalApi.Students.Subject do
     field :name, :string
     field :grade, :string
     field :percentage, :integer, default: 0
+    field :score, :integer, default: 0
+    field :max_score, :integer, default: 100
     field :teacher, :string
 
     belongs_to :student, SchoolPortalApi.Students.Student
@@ -19,7 +21,7 @@ defmodule SchoolPortalApi.Students.Subject do
   @doc false
   def changeset(subject, attrs) do
     subject
-    |> cast(attrs, [:name, :grade, :percentage, :teacher])
+    |> cast(attrs, [:name, :grade, :percentage, :score, :max_score, :teacher])
     |> validate_required([:name])
   end
 end
