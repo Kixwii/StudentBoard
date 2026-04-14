@@ -8,7 +8,7 @@
 import Config
 
 config :school_portal_api,
-  ecto_repos: [SchoolPortalApi.Repo],
+  ecto_repos: [SchoolPortalApi.Core.Repo],
   generators: [timestamp_type: :utc_datetime]
 
 # Configure the endpoint
@@ -29,7 +29,7 @@ config :school_portal_api, SchoolPortalApiWeb.Endpoint,
 #
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
-config :school_portal_api, SchoolPortalApi.Mailer, adapter: Swoosh.Adapters.Local
+config :school_portal_api, SchoolPortalApi.Core.Mailer, adapter: Swoosh.Adapters.Local
 
 # Configure Elixir's Logger
 config :logger, :default_formatter,

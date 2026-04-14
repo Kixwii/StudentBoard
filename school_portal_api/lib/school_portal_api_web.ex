@@ -39,7 +39,7 @@ defmodule SchoolPortalApiWeb do
     quote do
       use Phoenix.Controller, formats: [:html, :json]
 
-      use Gettext, backend: SchoolPortalApiWeb.Gettext
+      use Gettext, backend: SchoolPortalApiWeb.Core.Gettext
 
       import Plug.Conn
 

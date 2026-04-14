@@ -11,7 +11,7 @@ defmodule SchoolPortalApi.Fees.Transaction do
     field :method, :string
 
     belongs_to :fee_account, SchoolPortalApi.Fees.Account
-    belongs_to :guardian, SchoolPortalApi.Accounts.Guardian
+    belongs_to :guardian, SchoolPortalApi.Auth.GuardianAccount
 
     timestamps(type: :utc_datetime)
   end

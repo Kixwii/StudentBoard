@@ -10,7 +10,13 @@ defmodule SchoolPortalApi.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       compilers: Mix.compilers(),
-      deps: deps()
+      deps: deps(),
+      releases: [
+        school_portal_api: [
+          include_executables_for: [:unix],
+          applications: [runtime_tools: :permanent]
+        ]
+      ]
     ]
   end
 
@@ -19,7 +25,7 @@ defmodule SchoolPortalApi.MixProject do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {SchoolPortalApi.Application, []},
+      mod: {SchoolPortalApi.Core.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end

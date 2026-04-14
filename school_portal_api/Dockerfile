@@ -1,25 +1,39 @@
-# Dockerfile
-FROM hexpm/elixir:1.15.7-erlang-26.2.5-alpine
+# Build stage
+FROM hexpm/elixir:1.16.3-erlang-26.2.5.2-alpine AS build
 
-# Install build tools
-RUN apk add --no-cache build-base git postgresql-client
+RUN apk add --no-cache build-base git
 
-# Create app directory
-WORKDIR /school_portal_api
+WORKDIR /app
 
-# Install hex and rebar
-RUN mix local.hex --force && \
-    mix local.rebar --force
+RUN mix local.hex --force && mix local.rebar --force
 
-# Copy mix files first for better caching
+ENV MIX_ENV=prod
+
 COPY mix.exs mix.lock ./
 RUN mix deps.get --only prod
 
-# Copy application code
-COPY . .
+COPY config config
+RUN mix deps.compile
 
-# Compile
+COPY lib lib
+COPY priv priv
+
 RUN mix compile
+RUN mix release
 
-# Set up entrypoint
-CMD ["mix", "phx.server"]
+# Runtime stage
+FROM alpine:3.19 AS runtime
+
+RUN apk add --no-cache libstdc++ openssl ncurses-libs postgresql-client
+
+WORKDIR /app
+
+COPY --from=build /app/_build/prod/rel/school_portal_api ./
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 4000
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["start"]
