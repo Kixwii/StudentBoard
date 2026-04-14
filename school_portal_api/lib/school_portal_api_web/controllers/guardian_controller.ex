@@ -32,7 +32,8 @@ defmodule SchoolPortalApiWeb.GuardianController do
               %{
                 name: sub.name,
                 grade: sub.grade,
-                percentage: sub.percentage,
+                score: sub.score,
+                maxScore: sub.max_score,
                 teacher: sub.teacher
               }
             end)
@@ -50,7 +51,13 @@ defmodule SchoolPortalApiWeb.GuardianController do
           json(conn, %{
             data: %{
               currentGPA: student.current_gpa,
-              attendance: student.attendance,
+              attendance: %{
+                totalDays: student.total_days,
+                present: student.present_days,
+                absent: student.absent_days,
+                late: student.late_days
+              },
+              behavioralAssessment: student.behavioural_assessment,
               subjects: subjects,
               recentAssignments: assignments
             }
