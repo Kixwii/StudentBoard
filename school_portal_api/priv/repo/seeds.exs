@@ -63,7 +63,7 @@ case Accounts.get_user_by_email("teacher@demo.com") do
     IO.puts("Demo teacher already exists, skipping.")
 end
 
-# ── Student 1: Gladys ────────────────────────────────────────────────────────
+# Student 1: Gladys 
 
 gladys =
   case Repo.one(
@@ -81,7 +81,13 @@ gladys =
           class: "8A",
           photo: "👧🏿",
           current_gpa: 3.8,
-          attendance: 96
+          attendance: 96,
+          total_days: 100,
+          present_days: 94,
+          absent_days: 5,
+          late_days: 1,
+          behavioural_assessment:
+            "Gladys is very attentive and participates actively in class discussions. She consistently demonstrates strong work ethic and leadership qualities."
         })
 
       {:ok, _} = Students.link_guardian_to_student(guardian.id, s.id)
@@ -89,7 +95,27 @@ gladys =
       s
 
     s ->
-      IO.puts("Gladys already exists, skipping.")
+      IO.puts("Gladys already exists, checking for field updates...")
+
+      s =
+        if s.total_days == 0 do
+          {:ok, updated} =
+            s
+            |> SchoolPortalApi.Students.Student.changeset(%{
+              total_days: 100,
+              present_days: 94,
+              absent_days: 5,
+              late_days: 1,
+              behavioural_assessment:
+                "Gladys is very attentive and participates actively in class discussions. She consistently demonstrates strong work ethic and leadership qualities."
+            })
+            |> Repo.update()
+
+          updated
+        else
+          s
+        end
+
       s
   end
 
@@ -102,6 +128,8 @@ if Enum.empty?(existing_gladys_subjects) do
     Students.create_subject(gladys.id, %{
       name: "Mathematics",
       grade: "A-",
+      score: 87,
+      max_score: 100,
       percentage: 87,
       teacher: "Ms. Rodriguez"
     })
@@ -110,6 +138,8 @@ if Enum.empty?(existing_gladys_subjects) do
     Students.create_subject(gladys.id, %{
       name: "English Literature",
       grade: "B+",
+      score: 85,
+      max_score: 100,
       percentage: 85,
       teacher: "Mr. Thompson"
     })
@@ -118,6 +148,8 @@ if Enum.empty?(existing_gladys_subjects) do
     Students.create_subject(gladys.id, %{
       name: "Science",
       grade: "A",
+      score: 92,
+      max_score: 100,
       percentage: 92,
       teacher: "Dr. Chen"
     })
@@ -126,6 +158,8 @@ if Enum.empty?(existing_gladys_subjects) do
     Students.create_subject(gladys.id, %{
       name: "History",
       grade: "B",
+      score: 82,
+      max_score: 100,
       percentage: 82,
       teacher: "Ms. Williams"
     })
@@ -134,9 +168,19 @@ if Enum.empty?(existing_gladys_subjects) do
     Students.create_subject(gladys.id, %{
       name: "Art",
       grade: "A+",
+      score: 96,
+      max_score: 100,
       percentage: 96,
       teacher: "Mr. Davis"
     })
+else
+  Enum.each(existing_gladys_subjects, fn sub ->
+    if sub.score == 0 do
+      sub
+      |> SchoolPortalApi.Students.Subject.changeset(%{score: sub.percentage, max_score: 100})
+      |> Repo.update()
+    end
+  end)
 end
 
 existing_gladys_assignments =
@@ -211,7 +255,7 @@ if Enum.empty?(existing_gladys_docs) do
     })
 end
 
-# ── Student 2: Onesmus ───────────────────────────────────────────────────────
+# Student 2: Onesmus
 
 onesmus =
   case Repo.one(
@@ -229,7 +273,13 @@ onesmus =
           class: "5B",
           photo: "👦🏿",
           current_gpa: 3.4,
-          attendance: 91
+          attendance: 91,
+          total_days: 100,
+          present_days: 88,
+          absent_days: 10,
+          late_days: 2,
+          behavioural_assessment:
+            "Onesmus is a bright student but needs to focus more during class. He shows great potential and has been improving steadily this term."
         })
 
       {:ok, _} = Students.link_guardian_to_student(guardian.id, s.id)
@@ -237,7 +287,27 @@ onesmus =
       s
 
     s ->
-      IO.puts("Onesmus already exists, skipping.")
+      IO.puts("Onesmus already exists, checking for field updates...")
+
+      s =
+        if s.total_days == 0 do
+          {:ok, updated} =
+            s
+            |> SchoolPortalApi.Students.Student.changeset(%{
+              total_days: 100,
+              present_days: 88,
+              absent_days: 10,
+              late_days: 2,
+              behavioural_assessment:
+                "Onesmus is a bright student but needs to focus more during class. He shows great potential and has been improving steadily this term."
+            })
+            |> Repo.update()
+
+          updated
+        else
+          s
+        end
+
       s
   end
 
@@ -250,6 +320,8 @@ if Enum.empty?(existing_onesmus_subjects) do
     Students.create_subject(onesmus.id, %{
       name: "Mathematics",
       grade: "B+",
+      score: 83,
+      max_score: 100,
       percentage: 83,
       teacher: "Mr. Kamau"
     })
@@ -258,6 +330,8 @@ if Enum.empty?(existing_onesmus_subjects) do
     Students.create_subject(onesmus.id, %{
       name: "English",
       grade: "A-",
+      score: 88,
+      max_score: 100,
       percentage: 88,
       teacher: "Mrs. Njoroge"
     })
@@ -266,6 +340,8 @@ if Enum.empty?(existing_onesmus_subjects) do
     Students.create_subject(onesmus.id, %{
       name: "Science",
       grade: "B",
+      score: 79,
+      max_score: 100,
       percentage: 79,
       teacher: "Mr. Otieno"
     })
@@ -274,9 +350,19 @@ if Enum.empty?(existing_onesmus_subjects) do
     Students.create_subject(onesmus.id, %{
       name: "Social Studies",
       grade: "A",
+      score: 91,
+      max_score: 100,
       percentage: 91,
       teacher: "Ms. Mwangi"
     })
+else
+  Enum.each(existing_onesmus_subjects, fn sub ->
+    if sub.score == 0 do
+      sub
+      |> SchoolPortalApi.Students.Subject.changeset(%{score: sub.percentage, max_score: 100})
+      |> Repo.update()
+    end
+  end)
 end
 
 existing_onesmus_assignments =
