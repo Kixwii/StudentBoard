@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: school_portal_api_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./school_portal_api
+      dockerfile: Dockerfile.dev
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_HOST: db
+      POSTGRES_DB: school_portal_api_dev
+      POOL_SIZE: ${POOL_SIZE:-10}
+      GUARDIAN_SECRET_KEY: ${GUARDIAN_SECRET_KEY:-dev_secret_change_me}
+      MIX_ENV: dev
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./school_portal_api:/app
+      - api_deps:/app/deps
+      - api_build:/app/_build
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sh -c "mix deps.get && mix ecto.create && mix ecto.migrate && mix run priv/repo/seeds.exs && mix phx.server"
+
+  frontend:
+    build:
+      context: ./student-board
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:4000/api
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  api_deps:
+  api_build:
