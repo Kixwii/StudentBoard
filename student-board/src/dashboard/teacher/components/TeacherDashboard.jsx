@@ -8,9 +8,9 @@ import {
   getAllStudents,
   getStudentAcademic,
   updateStudentAcademic,
-} from './services/mockDataService';
-import { useProfilePhoto } from './hooks/useProfilePhoto';
-import ProfilePhotoModal from './components/ProfilePhotoModal';
+} from '../../../services/mock-data-service.js';
+import { useProfilePhoto } from '../../../shared/hooks/useProfilePhoto.js';
+import ProfilePhotoModal from '../../../shared/components/ProfilePhotoModal.jsx';
 
 // ── shared style tokens ──────────────────────────────────────
 const S = {
@@ -40,7 +40,6 @@ const ProgressBar = ({ pct, color = '#a3e635' }) => (
 
 // ── sidebar ──────────────────────────────────────────────────
 const Sidebar = ({ open, onClose, navItems, activeTab, onNav, onLogout }) => {
-  const sidebarW = open ? 224 : 0;
   return (
     <>
       {/* Backdrop */}

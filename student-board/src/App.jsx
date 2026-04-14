@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import './App.css'
-import Login from './Login'
-import ParentDashboard from './ParentDashboard'
-import TeacherDashboard from './TeacherDashboard'
-import { initMockData } from './services/mockDataService'
+import Login from './auth/components/Login'
+import ParentDashboard from './dashboard/parent/components/ParentDashboard'
+import TeacherDashboard from './dashboard/teacher/components/TeacherDashboard'
+import { initMockData } from './services/mock-data-service.js'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)

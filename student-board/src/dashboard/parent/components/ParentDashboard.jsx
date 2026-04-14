@@ -6,11 +6,11 @@ import {
   MessageSquare, GraduationCap, ArrowUpRight,
 } from 'lucide-react';
 
-import { guardianService } from './services/guardianService';
-import { feeService } from './services/feeService';
-import { documentService } from './services/documentService';
-import { useProfilePhoto } from './hooks/useProfilePhoto';
-import ProfilePhotoModal from './components/ProfilePhotoModal';
+import { guardianService } from '../../../services/guardian-service.js';
+import { feeService } from '../../../services/fee-service.js';
+import { documentService } from '../../../services/document-service.js';
+import { useProfilePhoto } from '../../../shared/hooks/useProfilePhoto.js';
+import ProfilePhotoModal from '../../../shared/components/ProfilePhotoModal.jsx';
 
 // ── shared style tokens ──────────────────────────────────────
 const S = {
@@ -57,8 +57,7 @@ const ProgressBar = ({ pct, color = '#a3e635' }) => (
 );
 
 // ── sidebar ──────────────────────────────────────────────────
-const Sidebar = ({ open, onClose, onToggle, navItems, activeTab, onNav, children: childList, selectedChild, onSelectChild, onLogout }) => {
-  const sidebarW = open ? 224 : 0;
+const Sidebar = ({ open, onClose, _onToggle, navItems, activeTab, onNav, children: childList, selectedChild, onSelectChild, onLogout }) => {
 
   return (
     <>

@@ -2,10 +2,10 @@ import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ParentDashboard from './ParentDashboard';
-import { guardianService } from './services/guardianService';
+import { guardianService } from '../../../services/guardian-service.js';
 
 // Mock the services
-vi.mock('./services/guardianService', () => ({
+vi.mock('../../../services/guardian-service.js', () => ({
   guardianService: {
     getStudents: vi.fn(),
     getStudentPerformance: vi.fn(),
@@ -13,21 +13,21 @@ vi.mock('./services/guardianService', () => ({
   }
 }));
 
-vi.mock('./services/feeService', () => ({
+vi.mock('../../../services/fee-service.js', () => ({
   feeService: {
     getAccount: vi.fn(),
     getTransactions: vi.fn(),
   }
 }));
 
-vi.mock('./services/documentService', () => ({
+vi.mock('../../../services/document-service.js', () => ({
   documentService: {
     getDocuments: vi.fn(),
   }
 }));
 
 // Mock ResizeObserver
-global.ResizeObserver = class ResizeObserver {
+globalThis.ResizeObserver = class ResizeObserver {
   observe() {}
   unobserve() {}
   disconnect() {}

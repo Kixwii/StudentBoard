@@ -2,10 +2,10 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import App from './App';
-import api from './services/api';
+import api from './core/api/client';
 
 // Mock the services
-vi.mock('./services/api', () => ({
+vi.mock('./core/api/client', () => ({
   default: {
     post: vi.fn(),
     interceptors: { request: { use: vi.fn() }, response: { use: vi.fn() } }
@@ -13,8 +13,8 @@ vi.mock('./services/api', () => ({
 }));
 
 // Mock the components rendered by App so we can test routing logic without deep rendering
-vi.mock('./ParentDashboard', () => ({
-  default: ({ user, onLogout }) => (
+vi.mock('./dashboard/parent/components/ParentDashboard', () => ({
+  default: ({ onLogout }) => (
     <div data-testid="parent-dashboard">
       Parent Dashboard Array
       <button onClick={onLogout}>Logout</button>
@@ -22,8 +22,8 @@ vi.mock('./ParentDashboard', () => ({
   )
 }));
 
-vi.mock('./TeacherDashboard', () => ({
-  default: ({ user, onLogout }) => (
+vi.mock('./dashboard/teacher/components/TeacherDashboard', () => ({
+  default: ({ onLogout }) => (
     <div data-testid="teacher-dashboard">
       Teacher Dashboard Array
       <button onClick={onLogout}>Logout</button>
