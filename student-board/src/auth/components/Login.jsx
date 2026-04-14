@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, GraduationCap, Users, User, AlertCircle } from 'lucide-react';
-import api from './services/api';
+import apiClient from '../../core/api/client.js';
 
 const Login = ({ onLogin }) => {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
@@ -18,7 +18,7 @@ const Login = ({ onLogin }) => {
     if (e) e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await api.post('/auth/login', {
+      const response = await apiClient.post('/auth/login', {
         email: credentials.username,
         password: credentials.password,
       });
