@@ -159,8 +159,10 @@ const Login = ({ onLogin }) => {
             </button>
           </form>
 
-          <div style={{ marginTop: '1.25rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Demo: <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>parent@demo.com</span> · <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>password123</span>
+          <div style={{ marginTop: '1.25rem', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+            <div>Parent: <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>parent@demo.com</span></div>
+            <div>Teacher: <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>teacher@demo.com</span></div>
+            <div>Password: <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>password123</span></div>
           </div>
         </div>
       </div>

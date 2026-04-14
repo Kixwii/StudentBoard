@@ -8,7 +8,7 @@ done
 echo "Database is ready."
 
 echo "Running migrations..."
-/app/bin/school_portal_api eval "SchoolPortalApi.Release.migrate()"
+/app/bin/school_portal_api eval "SchoolPortalApi.Core.Release.migrate()"
 
 export PHX_SERVER=true
 exec /app/bin/school_portal_api "$@"
