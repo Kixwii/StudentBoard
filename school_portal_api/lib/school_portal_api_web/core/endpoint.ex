@@ -43,7 +43,10 @@ defmodule SchoolPortalApiWeb.Endpoint do
   plug Plug.Head
   plug Plug.Session, @session_options
 
-  plug CORSPlug
+  plug CORSPlug,
+    origin: ["http://localhost:3000", "http://localhost:5173"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    headers: ["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"]
 
   plug SchoolPortalApiWeb.Router
 end
