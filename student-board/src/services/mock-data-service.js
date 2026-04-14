@@ -1,4 +1,5 @@
-// services/mockDataService.js
+// Mock data service for offline/demo mode
+// Provides localStorage-based mock data when backend is unavailable
 
 const INITIAL_DATA = {
   students: [
@@ -111,7 +112,6 @@ export const setMockDb = (data) => {
 
 export const getStudentsByGuardian = (guardianId) => {
   const db = getMockDb();
-  // For demo parent@test.com, just return the first two if no email match, or match by id
   const matches = db.students.filter(s => s.guardianId === guardianId);
   return matches.length > 0 ? matches : db.students.slice(0, 2); 
 };

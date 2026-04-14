@@ -1,9 +1,9 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { guardianService } from './guardianService';
-import api from './api';
+import { guardianService } from './guardian-service.js';
+import api from '../core/api/client.js';
 
 // Mock the api module
-vi.mock('./api');
+vi.mock('../core/api/client.js');
 
 describe('guardianService', () => {
   beforeEach(() => {

@@ -1,20 +1,20 @@
-import api from './api';
+import apiClient from '../core/api/client.js';
 
 export const guardianService = {
   getStudents: async (guardianId) => {
-    const response = await api.get(`/guardians/${guardianId}/students`);
+    const response = await apiClient.get(`/guardians/${guardianId}/students`);
     return response.data.data;
   },
 
   getStudentPerformance: async (guardianId, studentId) => {
-    const response = await api.get(
+    const response = await apiClient.get(
       `/guardians/${guardianId}/students/${studentId}/performance`
     );
     return response.data.data;
   },
 
   makePayment: async (guardianId, paymentData) => {
-    const response = await api.post(
+    const response = await apiClient.post(
       `/guardians/${guardianId}/payments`,
       paymentData
     );

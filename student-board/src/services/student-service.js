@@ -1,13 +1,13 @@
-import api from './api';
+import apiClient from '../core/api/client.js';
 
 export const studentService = {
   getGrades: async (studentId) => {
-    const response = await api.get(`/students/${studentId}/grades`);
+    const response = await apiClient.get(`/students/${studentId}/grades`);
     return response.data.data;
   },
 
   getSchedule: async (studentId) => {
-    const response = await api.get(`/students/${studentId}/schedule`);
+    const response = await apiClient.get(`/students/${studentId}/schedule`);
     return response.data.data;
   },
 
@@ -15,7 +15,7 @@ export const studentService = {
     const formData = new FormData();
     formData.append('file', file);
     
-    const response = await api.post(
+    const response = await apiClient.post(
       `/students/${studentId}/assignments/${assignmentId}/submit`,
       formData,
       {

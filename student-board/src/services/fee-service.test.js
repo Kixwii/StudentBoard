@@ -1,9 +1,9 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { feeService } from './feeService';
-import api from './api';
+import { feeService } from './fee-service.js';
+import api from '../core/api/client.js';
 
 // Mock the api module
-vi.mock('./api');
+vi.mock('../core/api/client.js');
 
 describe('feeService', () => {
   beforeEach(() => {
