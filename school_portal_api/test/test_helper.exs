@@ -1,2 +1,2 @@
 ExUnit.start()
-Ecto.Adapters.SQL.Sandbox.mode(SchoolPortalApi.Repo, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(SchoolPortalApi.Core.Repo, :manual)

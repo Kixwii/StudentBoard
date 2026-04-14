@@ -5,7 +5,7 @@ import Config
 # The MIX_TEST_PARTITION environment variable can be used
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
-config :school_portal_api, SchoolPortalApi.Repo,
+config :school_portal_api, SchoolPortalApi.Core.Repo,
   username: System.get_env("POSTGRES_USER", "postgres"),
   password: System.get_env("POSTGRES_PASSWORD", "postgres"),
   hostname: System.get_env("POSTGRES_HOST", "localhost"),
@@ -21,7 +21,7 @@ config :school_portal_api, SchoolPortalApiWeb.Endpoint,
   server: false
 
 # In test we don't send emails
-config :school_portal_api, SchoolPortalApi.Mailer, adapter: Swoosh.Adapters.Test
+config :school_portal_api, SchoolPortalApi.Core.Mailer, adapter: Swoosh.Adapters.Test
 
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false

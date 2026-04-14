@@ -1,7 +1,7 @@
 import Config
 
 # Configure your database
-config :school_portal_api, SchoolPortalApi.Repo,
+config :school_portal_api, SchoolPortalApi.Core.Repo,
   username: System.get_env("POSTGRES_USER", "postgres"),
   password: System.get_env("POSTGRES_PASSWORD", "postgres"),
   hostname: System.get_env("POSTGRES_HOST", "localhost"),

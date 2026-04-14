@@ -6,7 +6,7 @@ defmodule SchoolPortalApi.Students.GuardianStudent do
   @foreign_key_type :binary_id
 
   schema "guardian_students" do
-    belongs_to :guardian, SchoolPortalApi.Accounts.Guardian
+    belongs_to :guardian, SchoolPortalApi.Auth.GuardianAccount
     belongs_to :student, SchoolPortalApi.Students.Student
 
     timestamps(type: :utc_datetime)

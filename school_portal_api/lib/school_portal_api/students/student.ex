@@ -21,7 +21,7 @@ defmodule SchoolPortalApi.Students.Student do
     has_many :subjects, SchoolPortalApi.Students.Subject
     has_many :assignments, SchoolPortalApi.Students.Assignment
     has_one :fee_account, SchoolPortalApi.Fees.Account
-    has_many :documents, SchoolPortalApi.Documents.Document
+    has_many :documents, SchoolPortalApi.Academics.Document
 
     timestamps(type: :utc_datetime)
   end
