@@ -2,15 +2,15 @@ import React, { useState, useEffect } from 'react';
 import {
   Users, BookOpen, UserCheck, AlertCircle, Loader2, Home, BarChart3,
   Menu, X, ChevronRight, Edit3, Save, MessageSquare, GraduationCap,
-  ArrowLeft, TrendingUp,
+  ArrowLeft, TrendingUp, HelpCircle, UserPlus,
 } from 'lucide-react';
 import {
-  getAllStudents,
-  getStudentAcademic,
-  updateStudentAcademic,
+  getAllStudents, getStudentAcademic, updateStudentAcademic, addStudent,
+  CBC_LEVELS, getLevelInfo, ALL_GRADES,
 } from './services/mockDataService';
 import { useProfilePhoto } from './hooks/useProfilePhoto';
 import ProfilePhotoModal from './components/ProfilePhotoModal';
+import OnboardingGuide from './components/OnboardingGuide';
 
 // ── shared style tokens ──────────────────────────────────────
 const S = {
@@ -40,7 +40,6 @@ const ProgressBar = ({ pct, color = '#a3e635' }) => (
 
 // ── sidebar ──────────────────────────────────────────────────
 const Sidebar = ({ open, onClose, navItems, activeTab, onNav, onLogout }) => {
-  const sidebarW = open ? 224 : 0;
   return (
     <>
       {/* Backdrop */}
@@ -153,7 +152,7 @@ const TeacherDashboard = ({ user, onLogout }) => {
   const [academicData, setAcademicData] = useState(null);
 
   const [isEditing, setIsEditing] = useState(false);
-  const [editedGrades, setEditedGrades] = useState({});
+  const [editedStrands, setEditedStrands] = useState([]);
   const [editedAttendance, setEditedAttendance] = useState({ totalDays: 0, present: 0, absent: 0, late: 0 });
   const [editedBehavior, setEditedBehavior] = useState('');
   const [showPhotoModal, setShowPhotoModal] = useState(false);
@@ -173,30 +172,20 @@ const TeacherDashboard = ({ user, onLogout }) => {
       setIsEditing(false);
       setEditedAttendance(data.attendance || { totalDays: 0, present: 0, absent: 0, late: 0 });
       setEditedBehavior(data.behavioralAssessment || '');
-      const grades = {};
-      data.subjects.forEach(s => { grades[s.name] = { score: s.score, maxScore: s.maxScore }; });
-      setEditedGrades(grades);
+      setEditedStrands((data.strands || []).map(s => ({ ...s })));
     }
   }, [selectedStudent, students]);
 
   const handleSave = () => {
     if (!selectedStudent || !academicData) return;
-    const updatedSubjects = academicData.subjects.map(sub => {
-      const editSub = editedGrades[sub.name] || { score: sub.score, maxScore: sub.maxScore };
-      const score = parseInt(editSub.score || 0, 10);
-      const maxScore = parseInt(editSub.maxScore || 100, 10);
-      let newPct = maxScore > 0 ? (score / maxScore) * 100 : 0;
-      let newGrade = 'F';
-      if (newPct >= 90) newGrade = 'A';
-      else if (newPct >= 80) newGrade = 'B';
-      else if (newPct >= 70) newGrade = 'C';
-      else if (newPct >= 60) newGrade = 'D';
-      return { ...sub, score, maxScore, grade: newGrade };
+    const updatedStrands = editedStrands.map(s => {
+      const ind = parseInt(s.indicator, 10) || 1;
+      const info = getLevelInfo(ind);
+      return { ...s, indicator: ind, descriptor: info.label };
     });
-    let totalScore = 0, totalMax = 0;
-    updatedSubjects.forEach(s => { totalScore += s.score; totalMax += s.maxScore; });
-    const avgRatio = totalMax > 0 ? (totalScore / totalMax) : 0;
-    const newGPA = (avgRatio * 4.0).toFixed(1);
+    const avg = updatedStrands.length > 0
+      ? Math.round(updatedStrands.reduce((sum, s) => sum + s.indicator, 0) / updatedStrands.length)
+      : 0;
     updateStudentAcademic(selectedStudent.id, {
       attendance: {
         totalDays: parseInt(editedAttendance.totalDays || 0, 10),
@@ -205,8 +194,8 @@ const TeacherDashboard = ({ user, onLogout }) => {
         late: parseInt(editedAttendance.late || 0, 10),
       },
       behavioralAssessment: editedBehavior,
-      subjects: updatedSubjects,
-      currentGPA: parseFloat(newGPA),
+      strands: updatedStrands,
+      overallLevel: avg,
     });
     setIsEditing(false);
     setAcademicData(getStudentAcademic(selectedStudent.id));
@@ -215,6 +204,8 @@ const TeacherDashboard = ({ user, onLogout }) => {
   const navItems = [
     { id: 'classroom', label: 'My Classroom', icon: Users },
     { id: 'analytics', label: 'Class Analytics', icon: BarChart3 },
+    { id: 'admin', label: 'Admin Controls', icon: UserPlus },
+    { id: 'onboarding', label: 'Help & Onboarding', icon: HelpCircle },
   ];
 
   // ── Classroom view ───────────────────────────────────────
@@ -270,8 +261,8 @@ const TeacherDashboard = ({ user, onLogout }) => {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 10, borderTop: '1px solid #f3f4f6' }}>
                 <div>
-                  <div style={S.labelSm}>GPA</div>
-                  <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#1a1a1a', marginTop: 2 }}>{stats.currentGPA}</div>
+                  <div style={S.labelSm}>Level</div>
+                  <div style={{ fontWeight: 700, fontSize: '0.9rem', color: getLevelInfo(stats.overallLevel || 0).color, marginTop: 2 }}>{stats.overallLevel || '—'}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={S.labelSm}>Attend.</div>
@@ -328,8 +319,9 @@ const TeacherDashboard = ({ user, onLogout }) => {
             <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: 2 }}>{selectedStudent.grade} · {selectedStudent.class} · ID: {selectedStudent.id}</div>
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={S.labelSm}>GPA</div>
-            <div style={{ fontSize: '2rem', fontWeight: 900, color: '#1a1a1a', lineHeight: 1.1 }}>{academicData.currentGPA}</div>
+            <div style={S.labelSm}>CBC Level</div>
+            <div style={{ fontSize: '2rem', fontWeight: 900, color: getLevelInfo(academicData.overallLevel || 0).color, lineHeight: 1.1 }}>{academicData.overallLevel || '—'}</div>
+            <div style={{ fontSize: '0.68rem', fontWeight: 600, color: getLevelInfo(academicData.overallLevel || 0).color }}>{getLevelInfo(academicData.overallLevel || 0).short}</div>
           </div>
         </div>
 
@@ -403,51 +395,51 @@ const TeacherDashboard = ({ user, onLogout }) => {
           )}
         </div>
 
-        {/* Grades */}
+        {/* Strand Performance (CBC) */}
         <div style={{ ...S.card, padding: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.875rem' }}>
             <div style={{ width: 32, height: 32, borderRadius: 10, background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <BookOpen size={16} color="#8b5cf6" />
             </div>
-            <p style={S.sectionTitle}>Subject Grades</p>
+            <p style={S.sectionTitle}>Strand Performance</p>
           </div>
+          {(isEditing ? editedStrands : (academicData.strands || [])).length === 0 && (
+            <div style={{ textAlign: 'center', padding: '1.5rem', color: '#9ca3af', fontSize: '0.85rem' }}>No strands recorded yet.</div>
+          )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-            {academicData.subjects.map((subject, index) => {
-              const pct = subject.maxScore ? (subject.score / subject.maxScore) * 100 : 0;
+            {(isEditing ? editedStrands : (academicData.strands || [])).map((strand, index) => {
+              const info = getLevelInfo(strand.indicator);
               return (
                 <div key={index} style={{ padding: '0.875rem', background: '#f5f7fa', borderRadius: 14 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isEditing ? 0 : 8 }}>
-                    <span style={{ fontWeight: 600, fontSize: '0.875rem', color: '#1a1a1a' }}>{subject.name}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <div>
+                      <span style={{ fontWeight: 600, fontSize: '0.875rem', color: '#1a1a1a' }}>{strand.name}</span>
+                      {strand.subStrand && <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>{strand.subStrand}</div>}
+                    </div>
                     {isEditing ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <NumInput
-                          value={editedGrades[subject.name]?.score ?? subject.score}
-                          onChange={e => setEditedGrades({ ...editedGrades, [subject.name]: { ...editedGrades[subject.name], score: e.target.value } })}
-                        />
-                        <span style={{ color: '#9ca3af', fontSize: '0.875rem' }}>/</span>
-                        <NumInput
-                          value={editedGrades[subject.name]?.maxScore ?? subject.maxScore}
-                          min="1"
-                          onChange={e => setEditedGrades({ ...editedGrades, [subject.name]: { ...editedGrades[subject.name], maxScore: e.target.value } })}
-                        />
-                      </div>
+                      <select
+                        value={strand.indicator}
+                        onChange={e => {
+                          const updated = [...editedStrands];
+                          updated[index] = { ...updated[index], indicator: parseInt(e.target.value, 10) };
+                          setEditedStrands(updated);
+                        }}
+                        style={{ padding: '0.375rem 0.5rem', border: '1.5px solid #e8e8e8', borderRadius: 8, fontSize: '0.85rem', fontWeight: 700, fontFamily: 'inherit', outline: 'none', color: '#1a1a1a', cursor: 'pointer' }}
+                      >
+                        {CBC_LEVELS.map(l => (
+                          <option key={l.value} value={l.value}>{l.value} — {l.short}</option>
+                        ))}
+                      </select>
                     ) : (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#1a1a1a' }}>
-                          {subject.score}<span style={{ color: '#9ca3af', fontWeight: 400 }}>/{subject.maxScore}</span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 8, fontWeight: 800, fontSize: '0.85rem', background: info.bg, color: info.color }}>
+                          {strand.indicator}
                         </span>
-                        <span style={{
-                          padding: '2px 8px', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700,
-                          ...(subject.grade?.includes('A') ? { background: '#f7ffe0', color: '#4d7c0f' } :
-                            subject.grade?.includes('B') ? { background: '#eff6ff', color: '#1d4ed8' } :
-                              { background: '#fefce8', color: '#854d0e' }),
-                        }}>
-                          {subject.grade}
-                        </span>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 600, color: info.color }}>{info.short}</span>
                       </div>
                     )}
                   </div>
-                  {!isEditing && <ProgressBar pct={pct} color={pct >= 80 ? '#a3e635' : pct >= 60 ? '#fb923c' : '#ef4444'} />}
+                  {!isEditing && <ProgressBar pct={(strand.indicator / 4) * 100} color={info.color} />}
                 </div>
               );
             })}
@@ -457,17 +449,219 @@ const TeacherDashboard = ({ user, onLogout }) => {
     );
   };
 
+  // ── Analytics view ────────────────────────────────────────
+  const AnalyticsView = () => {
+    const classStats = React.useMemo(() => {
+      let totalLevel = 0;
+      let totalPresent = 0;
+      let totalDays = 0;
+      let strandLevels = {};
+
+      students.forEach(student => {
+        const stats = getStudentAcademic(student.id);
+        totalLevel += parseFloat(stats.overallLevel || 0);
+
+        const att = stats.attendance || { present: 0, totalDays: 0 };
+        totalPresent += att.present;
+        totalDays += att.totalDays;
+
+        (stats.strands || []).forEach(s => {
+          if (!strandLevels[s.name]) strandLevels[s.name] = { total: 0, count: 0 };
+          strandLevels[s.name].total += s.indicator;
+          strandLevels[s.name].count += 1;
+        });
+      });
+
+      const avgLevel = students.length ? (totalLevel / students.length).toFixed(1) : 0;
+      const attRate = totalDays ? Math.round((totalPresent / totalDays) * 100) : 0;
+
+      const strandAverages = Object.keys(strandLevels).map(name => {
+        const s = strandLevels[name];
+        const avg = s.count ? (s.total / s.count) : 0;
+        return { name, avg: parseFloat(avg.toFixed(1)) };
+      });
+
+      return { avgLevel, attRate, strandAverages };
+    }, [students]);
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <p style={{ ...S.sectionTitle, fontSize: '1.15rem' }}>Class Analytics</p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
+          <div style={{ ...S.card, padding: '1.25rem' }}>
+            <div style={S.labelSm}>Avg CBC Level</div>
+            <div style={{ ...S.valueLg, marginTop: 4, color: getLevelInfo(Math.round(classStats.avgLevel)).color }}>{classStats.avgLevel}</div>
+            <div style={{ fontSize: '0.75rem', color: '#16a34a', marginTop: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <TrendingUp size={12} /> Target: 3 (ME)
+            </div>
+          </div>
+          <div style={{ ...S.card, padding: '1.25rem' }}>
+            <div style={S.labelSm}>Overall Attendance</div>
+            <div style={{ ...S.valueLg, marginTop: 4 }}>{classStats.attRate}%</div>
+            <div style={{ fontSize: '0.75rem', color: classStats.attRate >= 90 ? '#16a34a' : '#ca8a04', marginTop: 8 }}>
+              {classStats.attRate >= 90 ? 'Excellent' : 'Needs attention'}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ ...S.card, padding: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '1rem' }}>
+            <div style={{ width: 32, height: 32, borderRadius: 10, background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <BookOpen size={16} color="#8b5cf6" />
+            </div>
+            <p style={S.sectionTitle}>Strand Averages</p>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {classStats.strandAverages.map((s, i) => {
+              const info = getLevelInfo(Math.round(s.avg));
+              return (
+                <div key={i}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1a1a1a' }}>{s.name}</span>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: info.color }}>{s.avg} / 4</span>
+                  </div>
+                  <ProgressBar pct={(s.avg / 4) * 100} color={info.color} />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ── Admin Controls view ──────────────────────────────────
+  const AdminControlsView = () => {
+    const [formData, setFormData] = useState({
+      name: '',
+      grade: '',
+      class: '',
+      guardianId: '',
+      photo: '👤'
+    });
+    const [successMessage, setSuccessMessage] = useState('');
+
+    const handleAddStudent = (e) => {
+      e.preventDefault();
+      if (!formData.name || !formData.grade || !formData.class || !formData.guardianId) {
+        return;
+      }
+      
+      const newStudent = addStudent(formData);
+      
+      // Update local state to reflect new student
+      setStudents(getAllStudents());
+      
+      setSuccessMessage(`Successfully added student ${newStudent.name} (ID: ${newStudent.id})`);
+      setFormData({ name: '', grade: '', class: '', guardianId: '', photo: '👤' });
+      
+      setTimeout(() => setSuccessMessage(''), 4000);
+    };
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <p style={{ ...S.sectionTitle, fontSize: '1.15rem' }}>Admin Controls</p>
+        
+        <div style={{ ...S.card, padding: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '1.25rem' }}>
+            <div style={{ width: 32, height: 32, borderRadius: 10, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <UserPlus size={16} color="#3b82f6" />
+            </div>
+            <p style={S.sectionTitle}>Add New Student</p>
+          </div>
+
+          {successMessage && (
+            <div style={{ marginBottom: '1rem', padding: '0.75rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', color: '#166534' }}>
+              {successMessage}
+            </div>
+          )}
+
+          <form onSubmit={handleAddStudent} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+              <div>
+                <label style={{ ...S.labelSm, display: 'block', marginBottom: 6 }}>Full Name</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g. Jane Doe"
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1.5px solid #e8e8e8', borderRadius: 10, fontSize: '0.9rem', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div>
+                <label style={{ ...S.labelSm, display: 'block', marginBottom: 6 }}>Unique Parent ID</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.guardianId}
+                  onChange={(e) => setFormData({ ...formData, guardianId: e.target.value })}
+                  placeholder="e.g. cGFyZW50..."
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1.5px solid #e8e8e8', borderRadius: 10, fontSize: '0.9rem', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div>
+                <label style={{ ...S.labelSm, display: 'block', marginBottom: 6 }}>Grade</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.grade}
+                  onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
+                  placeholder="e.g. Grade 5"
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1.5px solid #e8e8e8', borderRadius: 10, fontSize: '0.9rem', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div>
+                <label style={{ ...S.labelSm, display: 'block', marginBottom: 6 }}>Class</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.class}
+                  onChange={(e) => setFormData({ ...formData, class: e.target.value })}
+                  placeholder="e.g. 5A"
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1.5px solid #e8e8e8', borderRadius: 10, fontSize: '0.9rem', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div>
+                <label style={{ ...S.labelSm, display: 'block', marginBottom: 6 }}>Profile Emoji</label>
+                <select
+                  value={formData.photo}
+                  onChange={(e) => setFormData({ ...formData, photo: e.target.value })}
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1.5px solid #e8e8e8', borderRadius: 10, fontSize: '1rem', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', background: '#fff' }}
+                >
+                  <option value="👤">👤</option>
+                  <option value="👦🏿">👦🏿</option>
+                  <option value="👧🏿">👧🏿</option>
+                  <option value="👱‍♀️">👱‍♀️</option>
+                  <option value="👨‍🦱">👨‍🦱</option>
+                  <option value="👩🏽">👩🏽</option>
+                </select>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              style={{
+                marginTop: '0.5rem', padding: '0.75rem', background: '#1a1a1a', color: '#fff', border: 'none',
+                borderRadius: 12, fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit'
+              }}
+            >
+              Add Student
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'classroom': return <ClassroomView />;
-      case 'studentDetail': return <StudentDetailView />;
-      case 'analytics': return (
-        <div style={{ ...S.card, padding: '3rem', textAlign: 'center', color: '#9ca3af' }}>
-          <BarChart3 size={40} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
-          <p style={{ fontWeight: 600, color: '#1a1a1a' }}>Analytics</p>
-          <p style={{ fontSize: '0.875rem', marginTop: 4 }}>Coming soon…</p>
-        </div>
-      );
+      case 'studentDetail': return StudentDetailView();
+      case 'analytics': return <AnalyticsView />;
+      case 'admin': return <AdminControlsView />;
+      case 'onboarding': return <OnboardingGuide />;
       default: return <ClassroomView />;
     }
   };

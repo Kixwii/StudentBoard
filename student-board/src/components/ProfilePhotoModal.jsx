@@ -11,8 +11,9 @@ import { Camera, Upload, Trash2, X, CheckCircle } from 'lucide-react';
  *  onSave       {fn(dataUrl)}  - called with the new base64 string
  *  onRemove     {fn()}         - called when user removes their photo
  *  onClose      {fn()}         - called to dismiss the modal
+ *  userId       {string}       - optional unique id to display
  */
-const ProfilePhotoModal = ({ currentPhoto, userName, onSave, onRemove, onClose }) => {
+const ProfilePhotoModal = ({ currentPhoto, userName, onSave, onRemove, onClose, userId }) => {
   const fileInputRef = useRef(null);
   const [preview, setPreview] = useState(currentPhoto || null);
   const [isDirty, setIsDirty] = useState(false);
@@ -128,6 +129,22 @@ const ProfilePhotoModal = ({ currentPhoto, userName, onSave, onRemove, onClose }
               </button>
             </div>
           </div>
+
+          {userId && (
+            <div style={{ marginBottom: '1.5rem', textAlign: 'center', background: '#f5f7fa', padding: '0.75rem', borderRadius: 12 }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+                Your Unique Parent ID
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <code style={{ fontSize: '0.9rem', color: '#1a1a1a', fontWeight: 700, background: '#fff', padding: '4px 8px', borderRadius: 6, border: '1px solid #e8e8e8' }}>
+                  {btoa(userId).substring(0, 16)}...
+                </code>
+              </div>
+              <p style={{ fontSize: '0.7rem', color: '#9ca3af', margin: '6px 0 0', lineHeight: 1.4 }}>
+                Provide this ID to your child's teacher so they can assign them to your account securely.
+              </p>
+            </div>
+          )}
 
           {/* Drop zone */}
           <div

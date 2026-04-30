@@ -3,14 +3,17 @@ import {
   User, BookOpen, DollarSign, FileText, Download, Bell, LogOut,
   AlertCircle, Loader2, CreditCard, CheckCircle, Home, BarChart3,
   Menu, X, ChevronRight, TrendingUp, Calendar, Award, Clock,
-  MessageSquare, GraduationCap, ArrowUpRight,
+  MessageSquare, GraduationCap, ArrowUpRight, HelpCircle,
 } from 'lucide-react';
 
 import { guardianService } from './services/guardianService';
 import { feeService } from './services/feeService';
 import { documentService } from './services/documentService';
+import { getLevelInfo } from './services/mockDataService';
 import { useProfilePhoto } from './hooks/useProfilePhoto';
 import ProfilePhotoModal from './components/ProfilePhotoModal';
+import PaymentModal from './components/PaymentModal';
+import OnboardingGuide from './components/OnboardingGuide';
 
 // ── shared style tokens ──────────────────────────────────────
 const S = {
@@ -33,11 +36,11 @@ const badgeStyle = (type = 'lime') => ({
 });
 
 // ── mini stat card ───────────────────────────────────────────
-const StatCard = ({ label, value, badge, badgeType, sub, icon: Icon, iconBg }) => (
+const StatCard = ({ label, value, badge, badgeType, sub, icon, iconBg }) => (
   <div style={{ ...S.card, padding: '1rem', display: 'flex', flexDirection: 'column', gap: 8 }}>
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
       <div style={{ width: 36, height: 36, borderRadius: 10, background: iconBg || '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Icon size={18} color={iconBg ? '#1a1a1a' : '#6b7280'} />
+        {icon && React.createElement(icon, { size: 18, color: iconBg ? '#1a1a1a' : '#6b7280' })}
       </div>
       {badge && <span style={badgeStyle(badgeType)}>{badge}</span>}
     </div>
@@ -57,9 +60,7 @@ const ProgressBar = ({ pct, color = '#a3e635' }) => (
 );
 
 // ── sidebar ──────────────────────────────────────────────────
-const Sidebar = ({ open, onClose, onToggle, navItems, activeTab, onNav, children: childList, selectedChild, onSelectChild, onLogout }) => {
-  const sidebarW = open ? 224 : 0;
-
+const Sidebar = ({ open, onClose, navItems, activeTab, onNav, children: childList, selectedChild, onSelectChild, onLogout }) => {
   return (
     <>
       {/* Backdrop */}
@@ -199,6 +200,7 @@ const ParentDashboard = ({ user, onLogout }) => {
   const [feeData, setFeeData] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const { photo: profilePhoto, savePhoto, removePhoto } = useProfilePhoto(user?.username);
 
@@ -250,6 +252,7 @@ const ParentDashboard = ({ user, onLogout }) => {
     { id: 'academic', label: 'Academic', icon: BookOpen },
     { id: 'fees', label: 'Payments', icon: DollarSign },
     { id: 'documents', label: 'Documents', icon: FileText },
+    { id: 'onboarding', label: 'Help & Onboarding', icon: HelpCircle },
   ];
 
   const getAttendanceRate = (att) => {
@@ -296,13 +299,13 @@ const ParentDashboard = ({ user, onLogout }) => {
         {/* Stat cards – 2 col on mobile, 4 on desktop */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
           <StatCard
-            label="Current GPA"
-            value={academicData?.currentGPA || '—'}
-            badge={academicData?.currentGPA >= 3.0 ? 'High' : 'Avg'}
-            badgeType={academicData?.currentGPA >= 3.0 ? 'lime' : 'orange'}
+            label="CBC Level"
+            value={academicData?.overallLevel || '—'}
+            badge={academicData?.overallLevel >= 3 ? getLevelInfo(academicData?.overallLevel).short : (academicData?.overallLevel ? getLevelInfo(academicData?.overallLevel).short : '—')}
+            badgeType={academicData?.overallLevel >= 3 ? 'lime' : 'orange'}
             icon={Award}
             iconBg="#f0fdf4"
-            sub={<><TrendingUp size={11} /> Overall performance</>}
+            sub={<><TrendingUp size={11} /> {getLevelInfo(academicData?.overallLevel || 0).label}</>}
           />
           <StatCard
             label="Attendance"
@@ -354,26 +357,27 @@ const ParentDashboard = ({ user, onLogout }) => {
           </div>
         </div>
 
-        {/* Subject performance */}
+        {/* Strand performance (CBC) */}
         <div style={{ ...S.card, padding: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <p style={S.sectionTitle}>Subject Performance</p>
+            <p style={S.sectionTitle}>Strand Performance</p>
             <button onClick={() => setActiveTab('academic')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 4 }}>
               View all <ArrowUpRight size={13} />
             </button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-            {academicData?.subjects?.slice(0, 4).map((subject, i) => {
-              const pct = subject.maxScore ? (subject.score / subject.maxScore) * 100 : 0;
+            {(academicData?.strands || []).slice(0, 4).map((strand, i) => {
+              const info = getLevelInfo(strand.indicator);
               return (
                 <div key={i}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1a1a1a' }}>{subject.name}</span>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1a1a1a' }}>
-                      {subject.score}<span style={{ color: '#9ca3af', fontWeight: 400 }}>/{subject.maxScore}</span>
-                    </span>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1a1a1a' }}>{strand.name}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, borderRadius: 6, fontWeight: 800, fontSize: '0.78rem', background: info.bg, color: info.color }}>{strand.indicator}</span>
+                      <span style={{ fontSize: '0.7rem', fontWeight: 600, color: info.color }}>{info.short}</span>
+                    </div>
                   </div>
-                  <ProgressBar pct={pct} color={pct >= 80 ? '#a3e635' : pct >= 60 ? '#fb923c' : '#ef4444'} />
+                  <ProgressBar pct={(strand.indicator / 4) * 100} color={info.color} />
                 </div>
               );
             })}
@@ -398,21 +402,24 @@ const ParentDashboard = ({ user, onLogout }) => {
           <div style={{ ...S.card, padding: '1.25rem' }}>
             <p style={{ ...S.sectionTitle, marginBottom: '1rem' }}>Recent Assignments</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-              {academicData.recentAssignments.map((a, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0.75rem', background: '#f5f7fa', borderRadius: 12 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: 10, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <BookOpen size={16} color="#3b82f6" />
+              {academicData.recentAssignments.map((a, i) => {
+                const info = getLevelInfo(a.indicator || 3);
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0.75rem', background: '#f5f7fa', borderRadius: 12 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <BookOpen size={16} color="#3b82f6" />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.83rem', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.title || a.assignment}</div>
+                      <div style={{ fontSize: '0.72rem', color: '#9ca3af' }}>{a.strand || a.subject}</div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: 8, fontWeight: 800, fontSize: '0.8rem', background: info.bg, color: info.color }}>{a.indicator}</span>
+                      <div style={{ fontSize: '0.7rem', color: '#9ca3af', marginTop: 2 }}>{a.date}</div>
+                    </div>
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.83rem', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.assignment}</div>
-                    <div style={{ fontSize: '0.72rem', color: '#9ca3af' }}>{a.subject}</div>
-                  </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#16a34a' }}>{a.score}</div>
-                    <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>{a.date}</div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -420,30 +427,30 @@ const ParentDashboard = ({ user, onLogout }) => {
     );
   };
 
-  // ── Academic view ────────────────────────────────────────
+  // ── Academic view (CBC) ─────────────────────────────────
   const AcademicView = () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-      <p style={{ ...S.sectionTitle, fontSize: '1.15rem' }}>Academic Overview</p>
+      <p style={{ ...S.sectionTitle, fontSize: '1.15rem' }}>Strand Overview (CBC)</p>
+      <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 12, padding: '0.75rem', fontSize: '0.78rem', color: '#1d4ed8', lineHeight: 1.5, marginBottom: 4 }}>
+        <strong>CBC Note:</strong> Learners are assessed on Levels 1–4. Under CBC, learners progress to the next grade regardless of level.
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(1, 1fr)', gap: '0.75rem' }}>
-        {academicData?.subjects?.map((subject, i) => {
-          const pct = subject.maxScore ? (subject.score / subject.maxScore) * 100 : 0;
-          const grade = subject.grade || (pct >= 90 ? 'A' : pct >= 80 ? 'B' : pct >= 70 ? 'C' : 'D');
+        {(academicData?.strands || []).map((strand, i) => {
+          const info = getLevelInfo(strand.indicator);
           return (
             <div key={i} style={{ ...S.card, padding: '1.125rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <div>
-                  <div style={{ fontWeight: 700, color: '#1a1a1a', fontSize: '0.9rem' }}>{subject.name}</div>
-                  {subject.teacher && <div style={{ fontSize: '0.72rem', color: '#9ca3af', marginTop: 2 }}>{subject.teacher}</div>}
+                  <div style={{ fontWeight: 700, color: '#1a1a1a', fontSize: '0.9rem' }}>{strand.name}</div>
+                  {strand.subStrand && <div style={{ fontSize: '0.72rem', color: '#9ca3af', marginTop: 2 }}>{strand.subStrand}</div>}
+                  {strand.teacher && <div style={{ fontSize: '0.72rem', color: '#9ca3af', marginTop: 1 }}>{strand.teacher}</div>}
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <span style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1a1a1a' }}>{grade}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 10, fontWeight: 900, fontSize: '1.2rem', background: info.bg, color: info.color }}>{strand.indicator}</span>
+                  <div style={{ fontSize: '0.68rem', fontWeight: 700, color: info.color, marginTop: 2 }}>{info.label}</div>
                 </div>
               </div>
-              <ProgressBar pct={pct} color={pct >= 80 ? '#a3e635' : pct >= 60 ? '#fb923c' : '#ef4444'} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-                <div style={{ fontSize: '0.72rem', color: '#9ca3af' }}>{subject.score} / {subject.maxScore}</div>
-                <div style={{ fontSize: '0.72rem', fontWeight: 600, color: pct >= 80 ? '#4d7c0f' : '#c2410c' }}>{pct.toFixed(0)}%</div>
-              </div>
+              <ProgressBar pct={(strand.indicator / 4) * 100} color={info.color} />
             </div>
           );
         })}
@@ -460,7 +467,9 @@ const ParentDashboard = ({ user, onLogout }) => {
         <div style={{ fontSize: '2.5rem', fontWeight: 900, lineHeight: 1.1, marginBottom: 6 }}>${feeData?.currentBalance?.toFixed(2) || '0.00'}</div>
         <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginBottom: '1.25rem' }}>Due: {feeData?.dueDate || 'N/A'}</div>
         {feeData?.currentBalance > 0 && (
-          <button style={{
+          <button 
+            onClick={() => setShowPaymentModal(true)}
+            style={{
             display: 'flex', alignItems: 'center', gap: 8, padding: '0.625rem 1rem',
             background: '#a3e635', color: '#1a1a1a', border: 'none', borderRadius: 12,
             fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', fontFamily: 'inherit',
@@ -530,6 +539,7 @@ const ParentDashboard = ({ user, onLogout }) => {
       case 'academic': return <AcademicView />;
       case 'fees': return <FeesView />;
       case 'documents': return <DocumentsView />;
+      case 'onboarding': return <OnboardingGuide />;
       default: return <DashboardView />;
     }
   };
@@ -552,7 +562,6 @@ const ParentDashboard = ({ user, onLogout }) => {
       <Sidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        onToggle={() => setSidebarOpen(o => !o)}
         navItems={navItems}
         activeTab={activeTab}
         onNav={setActiveTab}
@@ -606,9 +615,35 @@ const ParentDashboard = ({ user, onLogout }) => {
         <ProfilePhotoModal
           currentPhoto={profilePhoto}
           userName={user?.firstName || user?.username}
+          userId={user?.guardianId}
           onSave={savePhoto}
           onRemove={removePhoto}
           onClose={() => setShowPhotoModal(false)}
+        />
+      )}
+
+      {/* Payment Modal */}
+      {showPaymentModal && (
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          onSuccess={() => {
+            setShowPaymentModal(false);
+            // Re-fetch data or update locally if desired.
+            if (children[selectedChild]) {
+              const studentId = children[selectedChild].id || children[selectedChild].studentId;
+              feeService.getTransactions(studentId).then(transactions => {
+                if (transactions) {
+                  feeService.getAccount(studentId).then(account => {
+                    setFeeData({ ...account, paymentHistory: transactions });
+                  });
+                }
+              });
+            }
+          }}
+          feeData={feeData}
+          studentId={children[selectedChild]?.id || children[selectedChild]?.studentId}
+          guardianId={user?.guardianId}
         />
       )}
     </div>

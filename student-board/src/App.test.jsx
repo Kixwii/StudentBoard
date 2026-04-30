@@ -14,7 +14,7 @@ vi.mock('./services/api', () => ({
 
 // Mock the components rendered by App so we can test routing logic without deep rendering
 vi.mock('./ParentDashboard', () => ({
-  default: ({ user, onLogout }) => (
+  default: ({ onLogout }) => (
     <div data-testid="parent-dashboard">
       Parent Dashboard Array
       <button onClick={onLogout}>Logout</button>
@@ -23,7 +23,7 @@ vi.mock('./ParentDashboard', () => ({
 }));
 
 vi.mock('./TeacherDashboard', () => ({
-  default: ({ user, onLogout }) => (
+  default: ({ onLogout }) => (
     <div data-testid="teacher-dashboard">
       Teacher Dashboard Array
       <button onClick={onLogout}>Logout</button>

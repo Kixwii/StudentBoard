@@ -27,7 +27,7 @@ vi.mock('./services/documentService', () => ({
 }));
 
 // Mock ResizeObserver
-global.ResizeObserver = class ResizeObserver {
+window.ResizeObserver = class ResizeObserver {
   observe() {}
   unobserve() {}
   disconnect() {}
@@ -64,7 +64,7 @@ describe('ParentDashboard Component', () => {
     });
 
     // Check branding
-    expect(screen.getAllByText('UpGradely').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('EduPortal').length).toBeGreaterThan(0);
     
     // Check main nav
     expect(screen.getAllByText('Dashboard').length).toBeGreaterThan(0);
